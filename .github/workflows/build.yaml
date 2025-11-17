@@ -4,7 +4,7 @@ name: Provision Runner VM, Azure Kubernetes Infrastructure and Deploy API
 on:
   push:
     branches:
-      - self-hosted
+      - main
   workflow_dispatch:
 
 jobs:
@@ -112,7 +112,7 @@ jobs:
       - name: Wait for VM to be ready
         run: |
           echo "Waiting for runner VM to be ready..."
-          sleep 270
+          sleep 280
 
   build:
     needs: provision-runner
