@@ -1,0 +1,62 @@
+name: Subsequent Builds and Deployments
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+
+    # Checkout the repository on the runner
+    - name: Checkout current Github repository
+      uses: actions/checkout@v4
+
+    - name: Move /deploy contents to /terraform
+      run: |
+        mv deploy/* .
+      working-directory: ./terraform
+
+    # Provision cloud infrastructure and deploy microservice to provisioned infrastructure
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Login to Microsoft Azure CLI
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Confirm/create Terraform Backend
+      run: |
+        chmod +x pre-apply.sh
+        ./pre-apply.sh
+      working-directory: ./terraform/bash_scripts
+
+    # Deploy microservice to provisioned infrastructure
+    - name: Initialize and validate Terraform configuration
+      env:
+        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      run: terraform init && terraform validate
+      working-directory: ./terraform
+
+    - name: Apply Terraform configuration
+      env:
+        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        USER_OBJECT_ID: ${{ secrets.MY_USER_OBJECT_ID }}
+      run: |
+        cat <<EOF > terraform.tfvars.json
+        {
+          "my_user_object_id": "$USER_OBJECT_ID",
+          "github_runner_token": "$RUNNER_TOKEN"
+        }
+        EOF
+        
+        terraform apply --auto-approve
+      working-directory: ./terraform
