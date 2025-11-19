@@ -47,16 +47,16 @@ runcmd:
   # --- Set up GitHub Actions Runner ---
   - mkdir -p /home/githubrunner/actions-runner
   - cd /home/githubrunner/actions-runner
-  - curl -o actions-runner-linux-x64-2.326.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.326.0/actions-runner-linux-x64-2.326.0.tar.gz
-  - echo "9c74af9b4352bbc99aecc7353b47bcdfcd1b2a0f6d15af54a99f54a0c14a1de8  actions-runner-linux-x64-2.326.0.tar.gz" | shasum -a 256 -c
-  - tar xzf ./actions-runner-linux-x64-2.326.0.tar.gz
+  - curl -o actions-runner-linux-x64-2.329.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz
+  - echo "194f1e1e4bd02f80b7e9633fc546084d8d4e19f3928a324d512ea53430102e1d  actions-runner-linux-x64-2.329.0.tar.gz" | shasum -a 256 -c
+  - tar xzf ./actions-runner-linux-x64-2.329.0.tar.gz
   - chown -R githubrunner:githubrunner /home/githubrunner/actions-runner
 
   # --- Configure the runner (Token will need to be injected securely using Terraform) ---
   - |
     su - githubrunner -c "cd ~/actions-runner && \
       expect -c '
-      spawn ./config.sh --url https://github.com/VictortheGreat7/Cloud_Engineering_Assessment --token ${github_runner_token}
+      spawn ./config.sh --url https://github.com/VictortheGreat7/self-hosted-full-stack --token ${github_runner_token}
       expect {
           \"Enter the name of the runner group to add this runner to:\" { send \"\r\"; exp_continue }
           \"Enter the name of runner:\" { send \"\r\"; exp_continue }
@@ -98,10 +98,10 @@ runcmd:
   - systemctl daemon-reload
   - systemctl enable github-runner.service
 
-power_state:
-  mode: reboot
-  message: Rebooting to apply docker group membership
-  timeout: 30
-  condition: true
+# power_state:
+#   mode: reboot
+#   message: Rebooting to apply docker group membership
+#   timeout: 30
+#   condition: true
 
 final_message: "🎉 GitHub Runner VM setup complete!"
