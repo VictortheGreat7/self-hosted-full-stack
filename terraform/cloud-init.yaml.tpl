@@ -25,12 +25,16 @@ runcmd:
   - apt-get install -y docker-ce docker-ce-cli containerd.io
 
   # Add user to docker group
-  - usermod -aG docker azureuser
   - usermod -aG docker githubrunner
 
-  # --- Enable Docker on startup ---
+  # Force group membership immediately without login
+  - gpasswd -a githubrunner docker
+  - sg docker -c "id githubrunner"   # just to force the group update in the current session
+
+  # Make sure Docker is fully up
   - systemctl enable docker
   - systemctl start docker
+  - until docker info >/dev/null 2>&1; do sleep 2; done
 
   # --- Install Terraform ---
   - curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
@@ -72,23 +76,27 @@ runcmd:
   - |
     cat << 'EOF' > /etc/systemd/system/github-runner.service
     [Unit]
-    Description=GitHub Actions Runner
-    After=network.target
+    Description=GitHub Actions Self-Hosted Runner
+    After=network-online.target docker.service
+    Requires=docker.service
+    Wants=network-online.target
 
     [Service]
     ExecStart=/home/githubrunner/actions-runner/run.sh
     WorkingDirectory=/home/githubrunner/actions-runner
-    Restart=always
     User=githubrunner
+    Restart=always
+    RestartSec=5
+    # Give Docker a chance to start
+    TimeoutStartSec=300
+    KillMode=process
 
     [Install]
     WantedBy=multi-user.target
     EOF
 
-  - systemctl daemon-reexec
   - systemctl daemon-reload
-  - systemctl enable github-runner
-  - systemctl start github-runner
+  - systemctl enable github-runner.service
 
 power_state:
   mode: reboot
