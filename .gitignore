@@ -5,6 +5,7 @@ prev_attempts/
 **microservices/
 /*.sh
 GeminiREADME.md
+*id_rsa*
 
 # Node
 node_modules/

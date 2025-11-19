@@ -90,4 +90,10 @@ runcmd:
   - systemctl enable github-runner
   - systemctl start github-runner
 
+power_state:
+  mode: reboot
+  message: Rebooting to apply docker group membership
+  timeout: 30
+  condition: true
+
 final_message: "🎉 GitHub Runner VM setup complete!"
