@@ -1,7 +1,7 @@
 # Multi-stage build for optimized production image
 
 # Stage 1: Build the React application
-FROM node:18-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
