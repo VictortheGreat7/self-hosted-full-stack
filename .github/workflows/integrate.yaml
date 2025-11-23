@@ -39,6 +39,7 @@ jobs:
         curl --fail http://localhost:5000/health || (docker logs backend-test && exit 1)
         curl --fail http://localhost:5000/api/world-clocks || (docker logs backend-test && exit 1)
         docker stop backend-test
+        docker rm backend-test
 
     - name: Push backend Docker image
       run: |
@@ -59,6 +60,7 @@ jobs:
         sleep 5
         curl --fail http://localhost:8080/health || (docker logs frontend-test && exit 1)
         docker stop frontend-test
+        docker rm frontend-test
 
     - name: Push frontend Docker image
       run: |
