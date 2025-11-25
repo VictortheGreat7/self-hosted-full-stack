@@ -113,7 +113,10 @@ resource "kubernetes_config_map_v1" "time_api_config" {
     TIME_ZONE = "UTC"
   }
 
-  depends_on = [kubernetes_namespace_v1.time_api, azurerm_kubernetes_cluster.time_api_cluster]
+  depends_on = [
+    kubernetes_namespace_v1.time_api,
+    azurerm_kubernetes_cluster.time_api_cluster
+  ]
 }
 
 module "nginx-controller" {

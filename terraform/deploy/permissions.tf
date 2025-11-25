@@ -5,7 +5,10 @@ resource "azuread_group" "time_api_admins" {
   owners           = [var.my_user_object_id]
   security_enabled = true
 
-  members = [var.my_user_object_id, data.azuread_client_config.current.object_id]
+  members = [
+    var.my_user_object_id,
+    data.azuread_client_config.current.object_id
+  ]
 }
 
 resource "azurerm_role_assignment" "cluster_rg_access" {
@@ -13,9 +16,7 @@ resource "azurerm_role_assignment" "cluster_rg_access" {
   role_definition_name = "Contributor"
   principal_id         = azurerm_kubernetes_cluster.time_api_cluster.identity[0].principal_id
 
-  depends_on = [
-    azurerm_kubernetes_cluster.time_api_cluster
-  ]
+  depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
 }
 
 resource "azurerm_role_assignment" "time_api_admins_rg_access" {
@@ -23,9 +24,7 @@ resource "azurerm_role_assignment" "time_api_admins_rg_access" {
   role_definition_name = "Contributor"
   principal_id         = azuread_group.time_api_admins.object_id
 
-  depends_on = [
-    azurerm_resource_group.time_api_rg
-  ]
+  depends_on = [azurerm_resource_group.time_api_rg]
 }
 
 resource "azurerm_role_assignment" "grafana_admin" {

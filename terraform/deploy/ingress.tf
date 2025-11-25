@@ -143,14 +143,14 @@ resource "kubernetes_job_v1" "wait_for_ingress_webhook" {
   depends_on = [null_resource.wait_for_ingress_webhook]
 }
 
-# Ingress Configuration for routing traffic
+# Ingress Configuration for routing backend traffic
 resource "kubernetes_ingress_v1" "world_clock" {
   metadata {
     name      = "world-clock-ingress"
     namespace = "time-api"
-    # annotations = {
-    #   "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
-    # }
+    annotations = {
+      "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
+    }
   }
 
   spec {
@@ -171,8 +171,30 @@ resource "kubernetes_ingress_v1" "world_clock" {
             }
           }
         }
+      }
+    }
+  }
 
-        # Route / to frontend
+  depends_on = [
+    kubernetes_service_v1.backend,
+    azurerm_dashboard_grafana.timeapi_grafana,
+    null_resource.wait_for_ingress_webhook,
+    kubernetes_job_v1.wait_for_ingress_webhook
+  ]
+}
+
+# Ingress Configuration for routing frontend traffic
+resource "kubernetes_ingress_v1" "world_clock_frontend" {
+  metadata {
+    name      = "world-clock-ingress-frontend"
+    namespace = "time-api"
+  }
+
+  spec {
+    ingress_class_name = "nginx"
+
+    rule {
+      http {
         path {
           path      = "/"
           path_type = "Prefix"
@@ -189,5 +211,10 @@ resource "kubernetes_ingress_v1" "world_clock" {
     }
   }
 
-  depends_on = [kubernetes_service_v1.backend, kubernetes_service_v1.frontend, azurerm_dashboard_grafana.timeapi_grafana, null_resource.wait_for_ingress_webhook, kubernetes_job_v1.wait_for_ingress_webhook]
+  depends_on = [
+    kubernetes_service_v1.frontend,
+    azurerm_dashboard_grafana.timeapi_grafana,
+    null_resource.wait_for_ingress_webhook,
+    kubernetes_job_v1.wait_for_ingress_webhook
+  ]
 }

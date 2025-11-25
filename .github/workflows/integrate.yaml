@@ -1,104 +1,153 @@
 name: Subsequent Builds and Deployments
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: self-hosted
-
+  changes:
+    runs-on: ubuntu-latest
+    # Record file state
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      terraform: ${{ steps.filter.outputs.terraform }}
     steps:
+      - name: Checkout current Github repository
+        uses: actions/checkout@v4
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            terraform:
+              - 'terraform/**'
 
-    # Checkout the repository on the runner
-    - name: Checkout current Github repository
-      uses: actions/checkout@v4
+  # Runs ONLY if backend/ folder changed
+  build-backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current Github repository
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and load backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          load: true
+          tags: world-clock-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Test backend container
+        run: |
+          docker run -d -p 5000:5000 --name backend-test world-clock-backend:${{ github.sha }}
 
-    # Build, test, and push Docker image
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+          sleep 5
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+          echo "Checking Health endpoint"
+          curl --fail http://localhost:5000/health || (docker logs backend-test && exit 1)
 
-    # Backend image
-    - name: Build backend Docker image
-      run: |
-        docker build -t world-clock-backend:${{ github.sha }} -t world-clock-backend:latest .
-      working-directory: ./backend
+          echo "Checking API endpoint"
+          curl --fail http://localhost:5000/api/world-clocks || (docker logs backend-test && exit 1)
 
-    - name: Test backend container
-      run: |
-        docker run -d -p 5000:5000 --name backend-test world-clock-backend:${{ github.sha }}
-        sleep 5
-        curl --fail http://localhost:5000/health || (docker logs backend-test && exit 1)
-        curl --fail http://localhost:5000/api/world-clocks || (docker logs backend-test && exit 1)
-        docker stop backend-test
-        docker rm backend-test
+          docker stop backend-test
+          docker rm backend-test
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            victorthegreat7/world-clock-backend:${{ github.sha }}
+            victorthegreat7/world-clock-backend:latest
+          cache-from: type=gha
 
-    - name: Push backend Docker image
-      run: |
-        docker tag world-clock-backend:${{ github.sha }} victorthegreat7/world-clock-backend:${{ github.sha }}
-        docker tag world-clock-backend:${{ github.sha }} victorthegreat7/world-clock-backend:latest
-        docker push victorthegreat7/world-clock-backend:${{ github.sha }}
-        docker push victorthegreat7/world-clock-backend:latest
+  # Runs ONLY if frontend/ folder changed
+  build-frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current Github repository
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and load backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          load: true
+          tags: world-clock-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Test frontend container
+        run: |
+          docker run -d -p 8080:80 --name frontend-test world-clock-frontend:${{ github.sha }}
 
-    # Frontend image
-    - name: Build frontend Docker image
-      run: |
-        docker build -t world-clock-frontend:${{ github.sha }} -t world-clock-frontend:latest .
-      working-directory: ./frontend
+          sleep 5
 
-    - name: Test frontend container
-      run: |
-        docker run -d -p 8080:80 --name frontend-test world-clock-frontend:${{ github.sha }}
-        sleep 5
-        curl --fail http://localhost:8080/health || (docker logs frontend-test && exit 1)
-        docker stop frontend-test
-        docker rm frontend-test
+          echo "Checking Health endpoint"
+          curl --fail http://localhost:8080/health || (docker logs frontend-test && exit 1)
 
-    - name: Push frontend Docker image
-      run: |
-        docker tag world-clock-frontend:${{ github.sha }} victorthegreat7/world-clock-frontend:${{ github.sha }}
-        docker tag world-clock-frontend:${{ github.sha }} victorthegreat7/world-clock-frontend:latest
-        docker push victorthegreat7/world-clock-frontend:${{ github.sha }}
-        docker push victorthegreat7/world-clock-frontend:latest
+          docker stop frontend-test
+          docker rm frontend-test
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            victorthegreat7/world-clock-frontend:${{ github.sha }}
+            victorthegreat7/world-clock-frontend:latest
+          cache-from: type=gha
 
+  # Runs ONLY if terraform/ folder changed
+  modify-infra:
+    needs: [changes]
+    if: ${{ needs.changes.outputs.terraform == 'true' }}
+    runs-on: self-hosted
+    steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
     - name: Move /deploy contents to /terraform
       run: |
         mv deploy/* .
       working-directory: ./terraform
-
-    # Provision cloud infrastructure and deploy microservice to provisioned infrastructure
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-
     - name: Login to Microsoft Azure CLI
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-
     - name: Confirm/create Terraform Backend
       run: |
         chmod +x pre-apply.sh
         ./pre-apply.sh
       working-directory: ./terraform/bash_scripts
-
-    # Deploy microservice to provisioned infrastructure
-    - name: Initialize and validate Terraform configuration
-      env:
-        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-        ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      run: terraform init && terraform validate
-      working-directory: ./terraform
-
+    - name: Cache Terraform Plugin Dir
+      uses: actions/cache@v3
+      with:
+        path: ~/.terraform.d/plugin-cache
+        key: terraform-plugin-cache-${{ runner.os }}-${{ hashFiles('terraform/.terraform.lock.hcl') }}
+        restore-keys: |
+          terraform-plugin-cache-${{ runner.os }}-
     - name: Apply Terraform configuration
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -107,6 +156,12 @@ jobs:
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         USER_OBJECT_ID: ${{ secrets.MY_USER_OBJECT_ID }}
       run: |
+        mkdir -p ~/.terraform.d/plugin-cache
+        echo 'plugin_cache_dir   = "$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
+
+        terraform init
+        terraform validate
+
         cat <<EOF > terraform.tfvars.json
         {
           "my_user_object_id": "$USER_OBJECT_ID",
@@ -116,3 +171,14 @@ jobs:
         
         terraform apply --auto-approve
       working-directory: ./terraform
+
+  # Runs if either terraform/ did not change and backend/ or frontend/ changed
+  update-aks-images:
+    needs: [changes, build-backend, build-frontend, modify-infra]
+    if: ${{ always() && (needs.modify-infra.result == 'skipped') && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success') }}
+    runs-on: self-hosted
+    steps:
+      - name: Update Image in AKS
+        run: |
+          kubectl set image deployment/backend-deployment backend=victorthegreat7/world-clock-backend:${{ github.sha }} -n time-api
+          kubectl set image deployment/frontend-deployment frontend=victorthegreat7/world-clock-frontend:${{ github.sha }} -n time-api

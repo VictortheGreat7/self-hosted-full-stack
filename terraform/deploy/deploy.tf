@@ -65,7 +65,10 @@ resource "kubernetes_deployment_v1" "backend" {
     }
   }
 
-  depends_on = [module.nginx-controller, kubernetes_namespace_v1.time_api]
+  depends_on = [
+    module.nginx-controller,
+    kubernetes_namespace_v1.time_api
+  ]
 }
 
 # Backend Service
@@ -196,7 +199,10 @@ resource "kubernetes_deployment_v1" "frontend" {
     }
   }
 
-  depends_on = [module.nginx-controller, kubernetes_namespace_v1.time_api]
+  depends_on = [
+    module.nginx-controller,
+    kubernetes_namespace_v1.time_api
+  ]
 }
 
 # Frontend Service
