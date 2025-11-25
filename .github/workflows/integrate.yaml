@@ -177,7 +177,7 @@ jobs:
   # Runs if either terraform/ did not change and backend/ or frontend/ changed
   update-aks-backend-images:
     needs: [changes, build-backend, modify-infra]
-    if: ${{ always() && (needs.modify-infra.result == 'skipped') && (needs.build-backend.result == 'success') }}
+    if: ${{ always() && (needs.modify-infra.result == 'skipped' || needs.modify-infra.result == 'success') && (needs.build-backend.result == 'success') }}
     runs-on: self-hosted
     steps:
       - name: Checkout current Github repository
@@ -230,7 +230,7 @@ jobs:
 
   update-aks-frontend-image:
     needs: [changes, build-frontend, modify-infra]
-    if: ${{ always() && (needs.modify-infra.result == 'skipped') && (needs.build-frontend.result == 'success') }}
+    if: ${{ always() && (needs.modify-infra.result == 'skipped' || needs.modify-infra.result == 'success') && (needs.build-frontend.result == 'success') }}
     runs-on: self-hosted
     steps:
       - name: Checkout current Github repository
