@@ -14,7 +14,7 @@ resource "kubernetes_network_policy_v1" "default_deny" {
     }
 
     policy_types = ["Ingress", "Egress"]
-#   }
+   }
 
   depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
 }
