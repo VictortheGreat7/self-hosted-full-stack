@@ -226,7 +226,7 @@ jobs:
           kubelogin convert-kubeconfig -l azurecli
       - name: Update Image in AKS
         run: |
-          kubectl set image deployment/world-clock-backend backend=victorthegreat7/world-clock-backend:${{ github.sha }} -n time-api
+          kubectl set image deployment/world-clock-backend backend=victorthegreat7/world-clock-backend:latest -n time-api
 
   update-aks-frontend-image:
     needs: [changes, build-frontend, modify-infra]
@@ -279,4 +279,4 @@ jobs:
           kubelogin convert-kubeconfig -l azurecli
       - name: Update Image in AKS
         run: |
-          kubectl set image deployment/world-clock-frontend frontend=victorthegreat7/world-clock-frontend:${{ github.sha }} -n time-api
+          kubectl set image deployment/world-clock-frontend frontend=victorthegreat7/world-clock-frontend:latest -n time-api
