@@ -126,6 +126,8 @@ jobs:
     if: ${{ needs.changes.outputs.terraform == 'true' }}
     runs-on: self-hosted
     steps:
+    - name: Checkout current Github repository
+      uses: actions/checkout@v4
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
     - name: Move /deploy contents to /terraform
