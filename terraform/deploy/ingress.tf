@@ -144,7 +144,7 @@ resource "kubernetes_job_v1" "wait_for_ingress_webhook" {
 }
 
 # Ingress Configuration for routing backend traffic
-resource "kubernetes_ingress_v1" "world_clock" {
+resource "kubernetes_ingress_v1" "world_clock_backend" {
   metadata {
     name      = "world-clock-ingress"
     namespace = "time-api"
@@ -160,7 +160,7 @@ resource "kubernetes_ingress_v1" "world_clock" {
       http {
         # Route /api/* to backend
         path {
-          path      = "/api"
+          path      = "/api(/|$)(.*)"
           path_type = "ImplementationSpecific"
           backend {
             service {
