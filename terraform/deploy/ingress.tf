@@ -148,9 +148,6 @@ resource "kubernetes_ingress_v1" "world_clock_backend" {
   metadata {
     name      = "world-clock-ingress"
     namespace = "time-api"
-    # annotations = {
-    #   "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
-    # }
   }
 
   spec {
