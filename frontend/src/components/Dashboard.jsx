@@ -17,8 +17,8 @@ function Dashboard() {
 
   useEffect(() => {
     fetchWorldClocks();
-    // Update clocks every second
-    const interval = setInterval(fetchWorldClocks, 1000);
+    // Update clocks every 5 minutes
+    const interval = setInterval(fetchWorldClocks, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
