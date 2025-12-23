@@ -51,16 +51,6 @@ resource "azurerm_kubernetes_cluster" "time_api_cluster" {
     }
   }
 
-  oms_agent {
-    log_analytics_workspace_id      = azurerm_log_analytics_workspace.timeapi_law.id
-    msi_auth_for_monitoring_enabled = true
-  }
-
-  monitor_metrics {
-    annotations_allowed = null
-    labels_allowed      = null
-  }
-
   cost_analysis_enabled = true
   sku_tier              = "Standard"
 
