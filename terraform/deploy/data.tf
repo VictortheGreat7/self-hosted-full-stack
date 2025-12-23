@@ -15,7 +15,7 @@ data "azurerm_kubernetes_cluster" "time_api_cluster" {
   depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
 }
 
-data "kubernetes_service" "nginx_ingress" {
+data "kubernetes_service_v1" "nginx_ingress" {
   metadata {
     name      = "ingress-nginx-controller"
     namespace = "kube-system"

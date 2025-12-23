@@ -130,7 +130,7 @@ module "monitoring" {
   source                 = "terraform-iaac/monitoring/kubernetes"
   version                = "1.2.2"
   nfs_endpoint           = "10.10.10.10"
-  domain                 = data.kubernetes_service.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
+  domain                 = data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
   tls                    = "secret-tls"
   grafana_admin_password = "admin"
 }
@@ -145,5 +145,5 @@ output "kube_config" {
 }
 
 output "ingress_ip" {
-  value = data.kubernetes_service.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
+  value = data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
 }
