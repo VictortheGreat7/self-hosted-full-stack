@@ -57,12 +57,6 @@ jobs:
     steps:
       - name: Checkout current Github repository
         uses: actions/checkout@v4
-        
-      - name: Install Node.js
-        run: |
-          sudo apt install -y nodejs npm
-          npm install -g npm@latest
-        working-directory: ./frontend
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to DockerHub
