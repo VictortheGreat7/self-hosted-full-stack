@@ -146,7 +146,7 @@ resource "kubernetes_job_v1" "wait_for_ingress_webhook" {
 # Ingress Configuration for routing backend traffic
 resource "kubernetes_ingress_v1" "kronos_backend" {
   metadata {
-    name      = "kronos-backend-ingress"
+    name      = "kronos_backend-ingress"
     namespace = "kronos"
     annotations = {
       "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
@@ -164,9 +164,9 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
           path_type = "ImplementationSpecific"
           backend {
             service {
-              name = kubernetes_service_v1.kronos-backend.metadata[0].name
+              name = kubernetes_service_v1.kronos_backend.metadata[0].name
               port {
-                number = kubernetes_service_v1.kronos-backend.spec[0].port[0].port
+                number = kubernetes_service_v1.kronos_backend.spec[0].port[0].port
               }
             }
           }

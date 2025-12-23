@@ -129,8 +129,6 @@ resource "kubernetes_job_v1" "kronos_backend" {
     template {
       metadata {
         name        = "kronos-backend-test"
-        app         = "kronos-app"
-        environment = "development"
       }
       spec {
         container {
@@ -211,11 +209,10 @@ resource "kubernetes_deployment_v1" "kronos_frontend" {
               memory = "64Mi"
               cpu    = "50m"
             }
-          }
-
-          limits = {
-            memory = "128Mi"
-            cpu    = "100m"
+            limits = {
+              memory = "128Mi"
+              cpu    = "100m"
+            }
           }
 
           liveness_probe {

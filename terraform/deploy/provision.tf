@@ -112,7 +112,7 @@ resource "kubernetes_config_map_v1" "kronos_config" {
   }
 
   depends_on = [
-    kubernetes_namespace_v1.time_api,
+    kubernetes_namespace_v1.kronos,
     azurerm_kubernetes_cluster.time_api_cluster
   ]
 }

@@ -105,26 +105,3 @@
 
 #   depends_on = [module.nginx-controller]
 # }
-
-resource "kubernetes_service_monitor" "kronos_service_monitor" {
-  metadata {
-    name      = "kronos-service-monitor"
-    namespace = "kronos"
-  }
-
-  spec {
-    selector = {
-      match_labels = {
-        app = "kronos-backend"
-      }
-    }
-
-    endpoints {
-      port     = "http"
-      interval = "15s"
-      path     = "/metrics"
-    }
-  }
-
-  depends_on = [kubernetes_service_v1.kronos_backend]
-}
