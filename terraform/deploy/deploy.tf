@@ -284,8 +284,6 @@ resource "kubernetes_job_v1" "kronos_frontend" {
     template {
       metadata {
         name        = "kronos-frontend-test"
-        app         = "kronos-app"
-        environment = "development"
       }
       spec {
         container {

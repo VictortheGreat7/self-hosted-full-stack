@@ -146,7 +146,7 @@ resource "kubernetes_job_v1" "wait_for_ingress_webhook" {
 # Ingress Configuration for routing backend traffic
 resource "kubernetes_ingress_v1" "kronos_backend" {
   metadata {
-    name      = "kronos_backend-ingress"
+    name      = "kronos_backend_ingress"
     namespace = "kronos"
     annotations = {
       "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
