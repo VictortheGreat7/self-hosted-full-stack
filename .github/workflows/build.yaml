@@ -1,5 +1,4 @@
 name: Provision Runner VM, Azure Kubernetes Infrastructure and Deploy API
-
 # This workflow will run on pushes to the main branch and manual triggers
 on:
   push:
