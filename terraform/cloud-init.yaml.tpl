@@ -71,6 +71,7 @@ runcmd:
   - sudo apt install -y nodejs
   - node -v
   - npm -v
+  - docker --version
 
   # --- Create a systemd service to keep the runner running ---
   - |
