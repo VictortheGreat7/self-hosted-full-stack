@@ -128,7 +128,6 @@ module "nginx-controller" {
 
 module "monitoring" {
   source                 = "./terraform-kubernetes-monitoring"
-  version                = "1.2.2"
   nfs_endpoint           = "10.10.10.10"
   domain                 = data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
   tls                    = "secret-tls"
