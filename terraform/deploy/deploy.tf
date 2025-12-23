@@ -128,7 +128,7 @@ resource "kubernetes_job_v1" "kronos_backend" {
   spec {
     template {
       metadata {
-        name        = "kronos-backend-test"
+        name = "kronos-backend-test"
       }
       spec {
         container {
@@ -283,7 +283,7 @@ resource "kubernetes_job_v1" "kronos_frontend" {
   spec {
     template {
       metadata {
-        name        = "kronos-frontend-test"
+        name = "kronos-frontend-test"
       }
       spec {
         container {
