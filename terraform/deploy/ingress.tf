@@ -177,7 +177,6 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
 
   depends_on = [
     kubernetes_service_v1.kronos_backend,
-    # azurerm_dashboard_grafana.timeapi_grafana,
     null_resource.wait_for_ingress_webhook,
     kubernetes_job_v1.wait_for_ingress_webhook
   ]
