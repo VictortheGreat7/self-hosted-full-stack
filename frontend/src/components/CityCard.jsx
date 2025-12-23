@@ -6,41 +6,50 @@ function CityCard({ city, is24Hour, animationDelay }) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    // Parse the datetime from the city data
-    const cityDate = new Date(city.datetime);
-    setCurrentTime(cityDate);
-
-    // Update every second
+  // Update to current time every second
     const interval = setInterval(() => {
-      setCurrentTime(prevTime => new Date(prevTime.getTime() + 1000));
+      setCurrentTime(new Date());
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [city.datetime]);
+  }, []);
 
   const formatTime = (date) => {
+    // Calculate the city's local time using UTC + offset
+    const utcTime = date.getTime();
+    const offsetMillis = city.offset_hours * 60 * 60 * 1000;
+    const cityTime = new Date(utcTime + offsetMillis);
+    
     if (is24Hour) {
-      return date.toLocaleTimeString('en-US', { 
+      return cityTime.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit', 
         second: '2-digit',
-        hour12: false 
+        hour12: false,
+        timeZone: 'UTC'
       });
     } else {
-      return date.toLocaleTimeString('en-US', { 
+      return cityTime.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit', 
         second: '2-digit',
-        hour12: true 
+        hour12: true,
+        timeZone: 'UTC'
       });
     }
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', {
+    // Calculate the city's local date using UTC + offset
+    const utcTime = date.getTime();
+    const offsetMillis = city.offset_hours * 60 * 60 * 1000;
+    const cityTime = new Date(utcTime + offsetMillis);
+    
+    return cityTime.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'UTC'
     });
   };
 

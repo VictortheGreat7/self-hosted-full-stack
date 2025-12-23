@@ -80,7 +80,7 @@ provider "kubernetes" {
 
 provider "helm" {
   kubernetes = {
-    host                   = azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].host
+    host = azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].host
 
     client_certificate     = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].client_certificate)
     client_key             = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].client_key)
@@ -95,18 +95,26 @@ provider "kubectl" {
   cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].cluster_ca_certificate)
 }
 
-resource "kubernetes_namespace_v1" "time_api" {
+resource "kubernetes_namespace_v1" "monitoring" {
   metadata {
-    name = "time-api"
+    name = "monitoring"
   }
 
   depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
 }
 
-resource "kubernetes_config_map_v1" "time_api_config" {
+resource "kubernetes_namespace_v1" "kronos" {
   metadata {
-    name      = "time-api-config"
-    namespace = "time-api"
+    name = "kronos"
+  }
+
+  depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
+}
+
+resource "kubernetes_config_map_v1" "kronos_config" {
+  metadata {
+    name      = "kronos-config"
+    namespace = "kronos"
   }
 
   data = {
@@ -126,6 +134,15 @@ module "nginx-controller" {
   timeout = 900
 
   depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
+}
+
+module "monitoring" {
+  source                 = "terraform-iaac/monitoring/kubernetes"
+  version                = "1.2.2"
+  nfs_endpoint           = "10.10.10.10"
+  domain                 = data.kubernetes_service.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
+  tls                    = "secret-tls"
+  grafana_admin_password = "admin"
 }
 
 output "aks_cluster_name" {

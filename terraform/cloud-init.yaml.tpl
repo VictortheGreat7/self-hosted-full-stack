@@ -47,8 +47,8 @@ runcmd:
   # --- Set up GitHub Actions Runner ---
   - mkdir -p /home/githubrunner/actions-runner
   - cd /home/githubrunner/actions-runner
-  - curl -o actions-runner-linux-x64-2.329.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz
-  - echo "194f1e1e4bd02f80b7e9633fc546084d8d4e19f3928a324d512ea53430102e1d  actions-runner-linux-x64-2.329.0.tar.gz" | shasum -a 256 -c
+  - curl -o actions-runner-linux-x64-2.330.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.330.0/actions-runner-linux-x64-2.330.0.tar.gz
+  - echo "af5c33fa94f3cc33b8e97937939136a6b04197e6dadfcfb3b6e33ae1bf41e79a  actions-runner-linux-x64-2.330.0.tar.gz" | shasum -a 256 -c
   - tar xzf ./actions-runner-linux-x64-2.329.0.tar.gz
   - chown -R githubrunner:githubrunner /home/githubrunner/actions-runner
 

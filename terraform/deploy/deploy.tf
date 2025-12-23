@@ -1,45 +1,61 @@
 # This script defines the instructions for the deployment of the world clock application to the Azure Kubernetes Service (AKS) cluster.
 
 # Backend API Deployment
-resource "kubernetes_deployment_v1" "backend" {
+resource "kubernetes_deployment_v1" "kronos_backend" {
   metadata {
-    name      = "world-clock-backend"
-    namespace = "time-api"
+    name      = "kronos-backend"
+    namespace = "kronos"
+    labels = {
+      app         = "kronos-app"
+      component   = "backend"
+      environment = "development"
+    }
   }
 
   spec {
     replicas = 3
+    strategy {
+      type = "RollingUpdate"
+      rolling_update {
+        max_surge       = "25%"
+        max_unavailable = "25%"
+      }
+    }
 
     selector {
       match_labels = {
-        app = "world-clock-backend"
+        app         = "kronos-app"
+        component   = "backend"
+        environment = "development"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "world-clock-backend"
+          app         = "kronos-app"
+          component   = "backend"
+          environment = "development"
         }
       }
 
       spec {
         container {
-          name  = "backend"
-          image = "victorthegreat7/world-clock-backend:latest"
+          name  = "kronos-backend"
+          image = "victorthegreat7/kronos-backend:latest"
 
           port {
             container_port = 5000
           }
 
           resources {
-            limits = {
-              cpu    = "200m"
-              memory = "256Mi"
-            }
             requests = {
-              cpu    = "100m"
               memory = "128Mi"
+              cpu    = "100m"
+            }
+            limits = {
+              memory = "256Mi"
+              cpu    = "200m"
             }
           }
 
@@ -50,15 +66,19 @@ resource "kubernetes_deployment_v1" "backend" {
             }
             initial_delay_seconds = 10
             period_seconds        = 10
+            timeout_seconds       = 5
+            failure_threshold     = 3
           }
 
           readiness_probe {
             http_get {
-              path = "/health"
+              path = "/ready"
               port = 5000
             }
             initial_delay_seconds = 5
             period_seconds        = 5
+            timeout_seconds       = 5
+            failure_threshold     = 3
           }
         }
       }
@@ -67,20 +87,22 @@ resource "kubernetes_deployment_v1" "backend" {
 
   depends_on = [
     module.nginx-controller,
-    kubernetes_namespace_v1.time_api
+    kubernetes_namespace_v1.kronos
   ]
 }
 
 # Backend Service
-resource "kubernetes_service_v1" "backend" {
+resource "kubernetes_service_v1" "kronos_backend" {
   metadata {
-    name      = "world-clock-backend-service"
-    namespace = "time-api"
+    name      = "kronos-backend-svc"
+    namespace = "kronos"
   }
 
   spec {
     selector = {
-      app = "world-clock-backend"
+      app         = "kronos-app"
+      component   = "backend-svc"
+      environment = "development"
     }
 
     port {
@@ -92,32 +114,34 @@ resource "kubernetes_service_v1" "backend" {
     type = "ClusterIP"
   }
 
-  depends_on = [kubernetes_deployment_v1.backend]
+  depends_on = [kubernetes_deployment_v1.kronos_backend]
 }
 
 
 # Backend Load Test
-resource "kubernetes_job_v1" "backend_loadtest" {
+resource "kubernetes_job_v1" "kronos_backend" {
   metadata {
-    name      = "backend-loadtest"
-    namespace = "time-api"
+    name      = "kronos-backend-test"
+    namespace = "kronos"
   }
 
   spec {
     template {
       metadata {
-        name = "backend-loadtest"
+        name        = "kronos-backend-test"
+        app         = "kronos-app"
+        environment = "development"
       }
       spec {
         container {
-          name    = "loadtest"
-          image   = "busybox"
+          name    = "kronos-backend-loadtest"
+          image   = "busybox:latest"
           command = ["/bin/sh", "-c"]
           args = [<<-EOF
             echo "Testing backend API endpoints..."
             for i in $(seq 1 30); do 
-              wget -q -O- http://world-clock-backend-service.time-api.svc.cluster.local:80/api/world-clocks && 
-              echo "Backend request $i successful"; 
+              wget -q -O- http://kronos-backend-svc.kronos.svc.cluster.local:80/api/world-clocks && 
+              echo "Backend request $i successful" || echo "Backend request $i failed"; 
               sleep 0.1; 
             done
             echo "All backend tests completed successfully!"
@@ -131,29 +155,45 @@ resource "kubernetes_job_v1" "backend_loadtest" {
     active_deadline_seconds = 300
   }
 
-  depends_on = [kubernetes_service_v1.backend]
+  depends_on = [kubernetes_service_v1.kronos_backend]
 }
 
 # Frontend Deployment
-resource "kubernetes_deployment_v1" "frontend" {
+resource "kubernetes_deployment_v1" "kronos_frontend" {
   metadata {
-    name      = "world-clock-frontend"
-    namespace = "time-api"
+    name      = "kronos-frontend"
+    namespace = "kronos"
+    labels = {
+      app         = "kronos-app"
+      component   = "frontend"
+      environment = "development"
+    }
   }
 
   spec {
-    replicas = 2
+    replicas = 3
+    strategy {
+      type = "RollingUpdate"
+      rolling_update {
+        max_surge       = "25%"
+        max_unavailable = "25%"
+      }
+    }
 
     selector {
       match_labels = {
-        app = "world-clock-frontend"
+        app         = "kronos-app"
+        component   = "frontend"
+        environment = "development"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "world-clock-frontend"
+          app         = "kronos-app"
+          component   = "frontend"
+          environment = "development"
         }
       }
 
@@ -167,14 +207,15 @@ resource "kubernetes_deployment_v1" "frontend" {
           }
 
           resources {
-            limits = {
-              cpu    = "100m"
-              memory = "128Mi"
-            }
             requests = {
-              cpu    = "50m"
               memory = "64Mi"
+              cpu    = "50m"
             }
+          }
+
+          limits = {
+            memory = "128Mi"
+            cpu    = "100m"
           }
 
           liveness_probe {
@@ -184,15 +225,19 @@ resource "kubernetes_deployment_v1" "frontend" {
             }
             initial_delay_seconds = 10
             period_seconds        = 10
+            timeout_seconds       = 5
+            failure_threshold     = 3
           }
 
           readiness_probe {
             http_get {
-              path = "/health"
+              path = "/ready"
               port = 80
             }
             initial_delay_seconds = 5
             period_seconds        = 5
+            timeout_seconds       = 5
+            failure_threshold     = 3
           }
         }
       }
@@ -201,20 +246,22 @@ resource "kubernetes_deployment_v1" "frontend" {
 
   depends_on = [
     module.nginx-controller,
-    kubernetes_namespace_v1.time_api
+    kubernetes_namespace_v1.kronos
   ]
 }
 
 # Frontend Service
-resource "kubernetes_service_v1" "frontend" {
+resource "kubernetes_service_v1" "kronos_frontend" {
   metadata {
-    name      = "world-clock-frontend-service"
-    namespace = "time-api"
+    name      = "kronos-frontend-service"
+    namespace = "kronos"
   }
 
   spec {
     selector = {
-      app = "world-clock-frontend"
+      app         = "kronos-app"
+      component   = "frontend"
+      environment = "development"
     }
 
     port {
@@ -226,30 +273,32 @@ resource "kubernetes_service_v1" "frontend" {
     type = "ClusterIP"
   }
 
-  depends_on = [kubernetes_deployment_v1.frontend]
+  depends_on = [kubernetes_deployment_v1.kronos_frontend]
 }
 
 # Frontend Load Test
-resource "kubernetes_job_v1" "frontend_loadtest" {
+resource "kubernetes_job_v1" "kronos_frontend" {
   metadata {
-    name      = "frontend-loadtest"
-    namespace = "time-api"
+    name      = "kronos-frontend-test"
+    namespace = "kronos"
   }
 
   spec {
     template {
       metadata {
-        name = "frontend-loadtest"
+        name        = "kronos-frontend-test"
+        app         = "kronos-app"
+        environment = "development"
       }
       spec {
         container {
-          name    = "loadtest"
-          image   = "busybox"
+          name    = "kronos-frontend-loadtest"
+          image   = "busybox:latest"
           command = ["/bin/sh", "-c"]
           args = [<<-EOF
             echo "Testing frontend service..."
             for i in $(seq 1 30); do 
-              wget -q -O- http://world-clock-frontend-service.time-api.svc.cluster.local:80/ && 
+              wget -q -O- http://kronos-frontend-service.kronos.svc.cluster.local:80/ && 
               echo "Frontend request $i successful"; 
               sleep 0.1; 
             done
@@ -264,5 +313,5 @@ resource "kubernetes_job_v1" "frontend_loadtest" {
     active_deadline_seconds = 300
   }
 
-  depends_on = [kubernetes_service_v1.frontend]
+  depends_on = [kubernetes_service_v1.kronos_frontend]
 }

@@ -144,10 +144,13 @@ resource "kubernetes_job_v1" "wait_for_ingress_webhook" {
 }
 
 # Ingress Configuration for routing backend traffic
-resource "kubernetes_ingress_v1" "world_clock_backend" {
+resource "kubernetes_ingress_v1" "kronos_backend" {
   metadata {
-    name      = "world-clock-ingress"
-    namespace = "time-api"
+    name      = "kronos-backend-ingress"
+    namespace = "kronos"
+    annotations = {
+      "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
+    }
   }
 
   spec {
@@ -157,13 +160,13 @@ resource "kubernetes_ingress_v1" "world_clock_backend" {
       http {
         # Route /api/* to backend
         path {
-          path      = "/api"
+          path      = "/api(/|$)(.*)"
           path_type = "ImplementationSpecific"
           backend {
             service {
-              name = kubernetes_service_v1.backend.metadata[0].name
+              name = kubernetes_service_v1.kronos-backend.metadata[0].name
               port {
-                number = kubernetes_service_v1.backend.spec[0].port[0].port
+                number = kubernetes_service_v1.kronos-backend.spec[0].port[0].port
               }
             }
           }
@@ -173,18 +176,18 @@ resource "kubernetes_ingress_v1" "world_clock_backend" {
   }
 
   depends_on = [
-    kubernetes_service_v1.backend,
-    azurerm_dashboard_grafana.timeapi_grafana,
+    kubernetes_service_v1.kronos_backend,
+    # azurerm_dashboard_grafana.timeapi_grafana,
     null_resource.wait_for_ingress_webhook,
     kubernetes_job_v1.wait_for_ingress_webhook
   ]
 }
 
 # Ingress Configuration for routing frontend traffic
-resource "kubernetes_ingress_v1" "world_clock_frontend" {
+resource "kubernetes_ingress_v1" "kronos_frontend" {
   metadata {
-    name      = "world-clock-ingress-frontend"
-    namespace = "time-api"
+    name      = "kronos-frontend-ingress"
+    namespace = "kronos"
   }
 
   spec {
@@ -197,9 +200,9 @@ resource "kubernetes_ingress_v1" "world_clock_frontend" {
           path_type = "Prefix"
           backend {
             service {
-              name = kubernetes_service_v1.frontend.metadata[0].name
+              name = kubernetes_service_v1.kronos_frontend.metadata[0].name
               port {
-                number = kubernetes_service_v1.frontend.spec[0].port[0].port
+                number = kubernetes_service_v1.kronos_frontend.spec[0].port[0].port
               }
             }
           }
@@ -209,8 +212,8 @@ resource "kubernetes_ingress_v1" "world_clock_frontend" {
   }
 
   depends_on = [
-    kubernetes_service_v1.frontend,
-    azurerm_dashboard_grafana.timeapi_grafana,
+    kubernetes_service_v1.kronos_frontend,
+    # azurerm_dashboard_grafana.timeapi_grafana,
     null_resource.wait_for_ingress_webhook,
     kubernetes_job_v1.wait_for_ingress_webhook
   ]

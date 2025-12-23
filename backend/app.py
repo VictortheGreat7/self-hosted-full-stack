@@ -2,9 +2,39 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
 import pytz
+from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Counter, Gauge, Histogram
 
 app = Flask(__name__)
 CORS(app)
+
+metrics = PrometheusMetrics(app)
+metrics.info('app_info', 'World Clock Backend Application', version='1.0.0')
+
+frontend_api_errors = Counter('frontend_api_request_errors_total', 'Frontend API request errors')
+
+frontend_api_latency = Histogram(
+    'frontend_api_request_latency_seconds',
+    'Frontend API request latency in seconds',
+    ['endpoint']
+)
+
+@app.route('/api/metrics', methods=['POST'])
+def receive_metrics():
+    """Receive custom metrics from frontend"""
+    data = request.get_json()
+    metric = data.get('metric')
+    value = data.get('value')
+    endpoint = data.get('endpoint', 'unknown')
+
+    if metric == 'api_request_duration_ms':
+        frontend_api_latency.labels(endpoint=endpoint).observe(value / 1000.0)
+    elif metric == 'api_request_errors':
+        frontend_api_errors.inc()
+    else:
+        return jsonify({'error': 'Unknown metric'}), 400
+
+    return jsonify({'status': 'ok'})
 
 # Major cities with their timezones
 MAJOR_CITIES = {
@@ -109,10 +139,17 @@ def get_current_time():
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return jsonify({"current_time": current_time})
 
+# Provide better health and readiness checks later. Currently simple but insufficient.
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
     return jsonify({"status": "healthy"})
+
+@app.route('/ready', methods=['GET'])
+def ready():
+    """Readiness check endpoint"""
+    return jsonify({"status": "ready"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

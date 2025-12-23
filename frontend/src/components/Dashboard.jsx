@@ -17,22 +17,25 @@ function Dashboard() {
 
   useEffect(() => {
     fetchWorldClocks();
-    // Update clocks every 5 minutes
-    const interval = setInterval(fetchWorldClocks, 5 * 60 * 1000);
+    // Update clocks every 75 seconds
+    const interval = setInterval(fetchWorldClocks, 75000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchWorldClocks = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
       const response = await fetch(`${API_URL}/api/world-clocks`);
       if (!response.ok) {
-        throw new Error('Failed to fetch world clocks');
+        throw new Error(`Failed to fetch world clocks: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
       setCities(data.cities);
-      setLoading(false);
     } catch (err) {
       setError(err.message);
+    } finally {
       setLoading(false);
     }
   };

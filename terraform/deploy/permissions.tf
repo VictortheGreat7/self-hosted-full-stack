@@ -27,14 +27,14 @@ resource "azurerm_role_assignment" "time_api_admins_rg_access" {
   depends_on = [azurerm_resource_group.time_api_rg]
 }
 
-resource "azurerm_role_assignment" "grafana_admin" {
-  scope                = azurerm_dashboard_grafana.timeapi_grafana.id
-  role_definition_name = "Grafana Admin"
-  principal_id         = azuread_group.time_api_admins.object_id
-}
+# resource "azurerm_role_assignment" "grafana_admin" {
+#   scope                = azurerm_dashboard_grafana.timeapi_grafana.id
+#   role_definition_name = "Grafana Admin"
+#   principal_id         = azuread_group.time_api_admins.object_id
+# }
 
-resource "azurerm_role_assignment" "grafana_prometheus_reader" {
-  scope                = azurerm_monitor_workspace.monitor_workspace.id
-  role_definition_name = "Monitoring Reader"
-  principal_id         = azurerm_dashboard_grafana.timeapi_grafana.identity[0].principal_id
-}
+# resource "azurerm_role_assignment" "grafana_prometheus_reader" {
+#   scope                = azurerm_monitor_workspace.monitor_workspace.id
+#   role_definition_name = "Monitoring Reader"
+#   principal_id         = azurerm_dashboard_grafana.timeapi_grafana.identity[0].principal_id
+# }
