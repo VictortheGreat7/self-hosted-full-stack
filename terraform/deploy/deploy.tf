@@ -198,7 +198,7 @@ resource "kubernetes_deployment_v1" "kronos_frontend" {
       spec {
         container {
           name  = "frontend"
-          image = "victorthegreat7/world-clock-frontend:latest"
+          image = "victorthegreat7/kronos-frontend:latest"
 
           port {
             container_port = 80
