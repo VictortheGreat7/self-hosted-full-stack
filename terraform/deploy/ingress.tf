@@ -216,3 +216,78 @@ resource "kubernetes_ingress_v1" "kronos_frontend" {
     kubernetes_job_v1.wait_for_ingress_webhook
   ]
 }
+
+resource "kubernetes_ingress_v1" "grafana" {
+  metadata {
+    name      = "grafana-ingress"
+    namespace = "monitoring"
+  }
+  spec {
+    ingress_class_name = "nginx"
+    rule {
+      host = "grafana.${data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip}.nip.io"
+      http {
+        path {
+          path = "/"
+          backend {
+            service {
+              name = "kube-prometheus-stack-grafana"
+              port { number = 80 }
+            }
+          }
+        }
+      }
+    }
+  }
+  depends_on = [helm_release.kube_prometheus_stack]
+}
+
+resource "kubernetes_ingress_v1" "prometheus" {
+  metadata {
+    name      = "prometheus-ingress"
+    namespace = "monitoring"
+  }
+  spec {
+    ingress_class_name = "nginx"
+    rule {
+      host = "prometheus.${data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip}.nip.io"
+      http {
+        path {
+          path = "/"
+          backend {
+            service {
+              name = "kube-prometheus-stack-prometheus"
+              port { number = 9090 }
+            }
+          }
+        }
+      }
+    }
+  }
+  depends_on = [helm_release.kube_prometheus_stack]
+}
+
+resource "kubernetes_ingress_v1" "alertmanager" {
+  metadata {
+    name      = "alertmanager-ingress"
+    namespace = "monitoring"
+  }
+  spec {
+    ingress_class_name = "nginx"
+    rule {
+      host = "alertmanager.${data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip}.nip.io"
+      http {
+        path {
+          path = "/"
+          backend {
+            service {
+              name = "kube-prometheus-stack-alertmanager"
+              port { number = 9093 }
+            }
+          }
+        }
+      }
+    }
+  }
+  depends_on = [helm_release.kube_prometheus_stack]
+}
