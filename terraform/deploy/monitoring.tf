@@ -151,40 +151,36 @@ resource "helm_release" "kube_prometheus_stack" {
   create_namespace = false
   version          = "80.9.2"
 
-  set {
-    name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName"
-    value = "default"
-  }
-
-  set {
-    name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
-    value = "10Gi"
-  }
-
-  set {
-    name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.storageClassName"
-    value = "default"
-  }
-
-  set {
-    name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.resources.requests.storage"
-    value = "5Gi"
-  }
-
-  set {
-    name  = "grafana.persistence.storageClassName"
-    value = "default"
-  }
-
-  set {
-    name  = "grafana.persistence.size"
-    value = "5Gi"
-  }
-
-  set {
-    name  = "grafana.adminPassword"
-    value = "admin"
-  }
+  set = [
+    {
+        name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName"
+        value = "default"
+    },
+    {
+        name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
+        value = "10Gi"
+    },
+    {
+        name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.storageClassName"
+        value = "default"
+    },
+    {
+        name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.resources.requests.storage"
+        value = "5Gi"
+    },
+    {
+        name  = "grafana.persistence.storageClassName"
+        value = "default"
+    },
+    {
+        name  = "grafana.persistence.size"
+        value = "5Gi"
+    },
+    {
+        name  = "grafana.adminPassword"
+        value = "admin"
+    }
+  ]
 
   depends_on = [
     kubernetes_namespace_v1.monitoring,
