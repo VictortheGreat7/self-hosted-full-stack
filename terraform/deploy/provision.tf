@@ -118,13 +118,13 @@ module "nginx-controller" {
   depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
 }
 
-module "monitoring" {
-  source                 = "git::https://github.com/VictortheGreat7/terraform-kubernetes-monitoring"
-  nfs_endpoint           = "10.10.10.10"
-  domain                 = data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
-  tls                    = "secret-tls"
-  grafana_admin_password = "admin"
-}
+# module "monitoring" {
+#   source                 = "git::https://github.com/VictortheGreat7/terraform-kubernetes-monitoring"
+#   nfs_endpoint           = "10.10.10.10"
+#   domain                 = data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
+#   tls                    = "secret-tls"
+#   grafana_admin_password = "admin"
+# }
 
 output "aks_cluster_name" {
   value = azurerm_kubernetes_cluster.time_api_cluster.name
