@@ -192,12 +192,3 @@ resource "helm_release" "kube_prometheus_stack" {
     azurerm_kubernetes_cluster.time_api_cluster
   ]
 }
-
-# Data source for nginx ingress
-data "kubernetes_service_v1" "nginx_ingress" {
-  metadata {
-    name      = "ingress-nginx-controller"
-    namespace = "kube-system"
-  }
-  depends_on = [module.nginx-controller]
-}
