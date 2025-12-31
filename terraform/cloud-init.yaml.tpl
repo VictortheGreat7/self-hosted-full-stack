@@ -64,7 +64,7 @@ runcmd:
           \"Enter name of work folder:\" { send \"\r\"; exp_continue }
           timeout { puts \"Timeout: Unexpected prompt encountered\"; exit 1 }
       }
-      expect eof
+      catch {expect eof}
       '"
 
   - curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -

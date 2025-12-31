@@ -101,7 +101,7 @@ resource "kubernetes_service_v1" "kronos_backend" {
   spec {
     selector = {
       app         = "kronos-app"
-      component   = "backend-svc"
+      component   = "backend"
       environment = "development"
     }
 
@@ -250,7 +250,7 @@ resource "kubernetes_deployment_v1" "kronos_frontend" {
 # Frontend Service
 resource "kubernetes_service_v1" "kronos_frontend" {
   metadata {
-    name      = "kronos-frontend-service"
+    name      = "kronos-frontend-svc"
     namespace = "kronos"
   }
 
