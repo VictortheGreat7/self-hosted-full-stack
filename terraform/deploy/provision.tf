@@ -85,14 +85,6 @@ provider "kubectl" {
   cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].cluster_ca_certificate)
 }
 
-# resource "kubernetes_namespace_v1" "monitoring" {
-#   metadata {
-#     name = "monitoring"
-#   }
-
-#   depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
-# }
-
 resource "kubernetes_namespace_v1" "kronos" {
   metadata {
     name = "kronos"
