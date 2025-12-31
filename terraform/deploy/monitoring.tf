@@ -105,3 +105,99 @@
 
 #   depends_on = [module.nginx-controller]
 # }
+
+# # Create Azure Disks for monitoring components
+# resource "azurerm_managed_disk" "prometheus" {
+#   name                = "prometheus-disk"
+#   location            = azurerm_resource_group.time_api_rg.location
+#   resource_group_name = azurerm_resource_group.time_api_rg.name
+#   storage_account_type = "Standard_LRS"
+#   create_option        = "Empty"
+#   disk_size_gb         = 50
+# }
+
+# resource "azurerm_managed_disk" "alertmanager" {
+#   name                = "alertmanager-disk"
+#   location            = azurerm_resource_group.time_api_rg.location
+#   resource_group_name = azurerm_resource_group.time_api_rg.name
+#   storage_account_type = "Standard_LRS"
+#   create_option        = "Empty"
+#   disk_size_gb         = 10
+# }
+
+# resource "azurerm_managed_disk" "grafana" {
+#   name                = "grafana-disk"
+#   location            = azurerm_resource_group.time_api_rg.location
+#   resource_group_name = azurerm_resource_group.time_api_rg.name
+#   storage_account_type = "Standard_LRS"
+#   create_option        = "Empty"
+#   disk_size_gb         = 10
+# }
+
+# Create monitoring namespace
+resource "kubernetes_namespace_v1" "monitoring" {
+  metadata {
+    name = "monitoring"
+  }
+  depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
+}
+
+# Deploy kube-prometheus-stack with Azure storage class
+resource "helm_release" "kube_prometheus_stack" {
+  name             = "kube-prometheus-stack"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  namespace        = kubernetes_namespace_v1.monitoring.metadata[0].name
+  create_namespace = false
+  version          = "80.9.2"
+
+  set {
+    name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName"
+    value = "default"
+  }
+
+  set {
+    name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
+    value = "10Gi"
+  }
+
+  set {
+    name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.storageClassName"
+    value = "default"
+  }
+
+  set {
+    name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.resources.requests.storage"
+    value = "5Gi"
+  }
+
+  set {
+    name  = "grafana.persistence.storageClassName"
+    value = "default"
+  }
+
+  set {
+    name  = "grafana.persistence.size"
+    value = "5Gi"
+  }
+
+  set {
+    name  = "grafana.adminPassword"
+    value = "admin"
+  }
+
+  depends_on = [
+    kubernetes_namespace_v1.monitoring,
+    module.nginx-controller,
+    azurerm_kubernetes_cluster.time_api_cluster
+  ]
+}
+
+# Data source for nginx ingress
+data "kubernetes_service_v1" "nginx_ingress" {
+  metadata {
+    name      = "ingress-nginx-controller"
+    namespace = "kube-system"
+  }
+  depends_on = [module.nginx-controller]
+}
