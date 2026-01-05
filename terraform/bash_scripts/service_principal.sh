@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Check if the jq command exists and install it if it doesn't
 if ! sudo which jq &> /dev/null; then
