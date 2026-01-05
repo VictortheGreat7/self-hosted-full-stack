@@ -1,6 +1,4 @@
-# This script defines the instructions for the deployment of the world clock application to the Azure Kubernetes Service (AKS) cluster.
-
-# Backend API Deployment
+# Backend Deployment
 resource "kubernetes_deployment_v1" "kronos_backend" {
   metadata {
     name      = "kronos-backend"
@@ -118,43 +116,43 @@ resource "kubernetes_service_v1" "kronos_backend" {
 }
 
 
-# Backend Load Test
-resource "kubernetes_job_v1" "kronos_backend" {
-  metadata {
-    name      = "kronos-backend-test"
-    namespace = "kronos"
-  }
+# # Backend Load Test
+# resource "kubernetes_job_v1" "kronos_backend" {
+#   metadata {
+#     name      = "kronos-backend-test"
+#     namespace = "kronos"
+#   }
 
-  spec {
-    template {
-      metadata {
-        name = "kronos-backend-test"
-      }
-      spec {
-        container {
-          name    = "kronos-backend-loadtest"
-          image   = "busybox:latest"
-          command = ["/bin/sh", "-c"]
-          args = [<<-EOF
-            echo "Testing backend API endpoints..."
-            for i in $(seq 1 30); do 
-              wget -q -O- http://kronos-backend-svc.kronos.svc.cluster.local:80/api/world-clocks && 
-              echo "Backend request $i successful" || echo "Backend request $i failed"; 
-              sleep 0.1; 
-            done
-            echo "All backend tests completed successfully!"
-          EOF
-          ]
-        }
-        restart_policy = "Never"
-      }
-    }
-    backoff_limit           = 4
-    active_deadline_seconds = 300
-  }
+#   spec {
+#     template {
+#       metadata {
+#         name = "kronos-backend-test"
+#       }
+#       spec {
+#         container {
+#           name    = "kronos-backend-loadtest"
+#           image   = "busybox:latest"
+#           command = ["/bin/sh", "-c"]
+#           args = [<<-EOF
+#             echo "Testing backend API endpoints..."
+#             for i in $(seq 1 30); do 
+#               wget -q -O- http://kronos-backend-svc.kronos.svc.cluster.local:80/api/world-clocks && 
+#               echo "Backend request $i successful" || echo "Backend request $i failed"; 
+#               sleep 0.1; 
+#             done
+#             echo "All backend tests completed successfully!"
+#           EOF
+#           ]
+#         }
+#         restart_policy = "Never"
+#       }
+#     }
+#     backoff_limit           = 4
+#     active_deadline_seconds = 300
+#   }
 
-  depends_on = [kubernetes_service_v1.kronos_backend]
-}
+#   depends_on = [kubernetes_service_v1.kronos_backend]
+# }
 
 # Frontend Deployment
 resource "kubernetes_deployment_v1" "kronos_frontend" {
@@ -273,40 +271,40 @@ resource "kubernetes_service_v1" "kronos_frontend" {
   depends_on = [kubernetes_deployment_v1.kronos_frontend]
 }
 
-# Frontend Load Test
-resource "kubernetes_job_v1" "kronos_frontend" {
-  metadata {
-    name      = "kronos-frontend-test"
-    namespace = "kronos"
-  }
+# # Frontend Load Test
+# resource "kubernetes_job_v1" "kronos_frontend" {
+#   metadata {
+#     name      = "kronos-frontend-test"
+#     namespace = "kronos"
+#   }
 
-  spec {
-    template {
-      metadata {
-        name = "kronos-frontend-test"
-      }
-      spec {
-        container {
-          name    = "kronos-frontend-loadtest"
-          image   = "busybox:latest"
-          command = ["/bin/sh", "-c"]
-          args = [<<-EOF
-            echo "Testing frontend service..."
-            for i in $(seq 1 30); do 
-              wget -q -O- http://kronos-frontend-service.kronos.svc.cluster.local:80/ && 
-              echo "Frontend request $i successful"; 
-              sleep 0.1; 
-            done
-            echo "All frontend tests completed successfully!"
-          EOF
-          ]
-        }
-        restart_policy = "Never"
-      }
-    }
-    backoff_limit           = 4
-    active_deadline_seconds = 300
-  }
+#   spec {
+#     template {
+#       metadata {
+#         name = "kronos-frontend-test"
+#       }
+#       spec {
+#         container {
+#           name    = "kronos-frontend-loadtest"
+#           image   = "busybox:latest"
+#           command = ["/bin/sh", "-c"]
+#           args = [<<-EOF
+#             echo "Testing frontend service..."
+#             for i in $(seq 1 30); do 
+#               wget -q -O- http://kronos-frontend-svc.kronos.svc.cluster.local:80/ && 
+#               echo "Frontend request $i successful"; 
+#               sleep 0.1; 
+#             done
+#             echo "All frontend tests completed successfully!"
+#           EOF
+#           ]
+#         }
+#         restart_policy = "Never"
+#       }
+#     }
+#     backoff_limit           = 4
+#     active_deadline_seconds = 300
+#   }
 
-  depends_on = [kubernetes_service_v1.kronos_frontend]
-}
+#   depends_on = [kubernetes_service_v1.kronos_frontend]
+# }
