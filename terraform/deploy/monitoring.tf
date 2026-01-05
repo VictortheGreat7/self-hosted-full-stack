@@ -1,148 +1,60 @@
-# # This file contains the monitoring and logging configuration for the Time API application deployed on Azure Kubernetes Service (AKS).
+# This file contains the monitoring and logging configuration for the Time API application deployed on Azure Kubernetes Service (AKS).
 
-# resource "azurerm_log_analytics_workspace" "timeapi_law" {
-#   name                = "${azurerm_resource_group.time_api_rg.name}-law"
-#   location            = azurerm_resource_group.time_api_rg.location
-#   resource_group_name = azurerm_resource_group.time_api_rg.name
-# }
+resource "azurerm_log_analytics_workspace" "kronos_law" {
+  name                = "${azurerm_resource_group.kronos_rg.name}-law"
+  location            = azurerm_resource_group.kronos_rg.location
+  resource_group_name = azurerm_resource_group.kronos_rg.name
+}
 
-# resource "azurerm_monitor_workspace" "monitor_workspace" {
-#   name                = "timeapi-prometheus-monitor-workspace"
-#   location            = azurerm_resource_group.time_api_rg.location
-#   resource_group_name = azurerm_resource_group.time_api_rg.name
-# }
+resource "azurerm_monitor_diagnostic_setting" "kronos_audit_logs" {
+  name                       = "${azurerm_resource_group.kronos_rg.name}-audit-logs"
+  target_resource_id         = azurerm_kubernetes_cluster.kronos_cluster.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.kronos_law.id
 
-# resource "azurerm_monitor_data_collection_endpoint" "time_api_dce" {
-#   name                = "time-api-dce"
-#   resource_group_name = azurerm_resource_group.time_api_rg.name
-#   location            = azurerm_resource_group.time_api_rg.location
-#   kind                = "Linux"
-# }
+  enabled_log {
+    category = "kube-apiserver"
+  }
 
-# resource "azurerm_monitor_data_collection_rule" "time_api_dcr" {
-#   name                        = "time-api-prometheus-dcr"
-#   resource_group_name         = azurerm_resource_group.time_api_rg.name
-#   location                    = azurerm_resource_group.time_api_rg.location
-#   data_collection_endpoint_id = azurerm_monitor_data_collection_endpoint.time_api_dce.id
+  enabled_log {
+    category = "kube-controller-manager"
+  }
 
-#   destinations {
-#     monitor_account {
-#       monitor_account_id = azurerm_monitor_workspace.monitor_workspace.id
-#       name               = "MonitoringAccount1"
-#     }
-#   }
+  enabled_log {
+    category = "kube-scheduler"
+  }
 
-#   data_flow {
-#     streams      = ["Microsoft-PrometheusMetrics"]
-#     destinations = ["MonitoringAccount1"]
-#   }
+  enabled_log {
+    category = "kube-audit-admin"
+  }
 
-#   data_sources {
-#     prometheus_forwarder {
-#       streams = ["Microsoft-PrometheusMetrics"]
-#       name    = "PrometheusDataSource"
-#     }
-#   }
+  enabled_log {
+    category = "kube-audit"
+  }
 
-#   description = "Data collection rule for Prometheus metrics"
-# }
+  enabled_log {
+    category = "cluster-autoscaler"
+  }
 
-# resource "azurerm_monitor_data_collection_rule_association" "time_api_dcra" {
-#   name                    = "time-api-dcra"
-#   target_resource_id      = azurerm_kubernetes_cluster.time_api_cluster.id
-#   data_collection_rule_id = azurerm_monitor_data_collection_rule.time_api_dcr.id
-#   description             = "Association between AKS cluster and Prometheus DCR"
-# }
+  enabled_log {
+    category = "AuditEvent"
+  }
 
-# resource "azurerm_monitor_diagnostic_setting" "timeapi_audit_logs" {
-#   name                       = "${azurerm_resource_group.time_api_rg.name}-audit-logs"
-#   target_resource_id         = azurerm_kubernetes_cluster.time_api_cluster.id
-#   log_analytics_workspace_id = azurerm_log_analytics_workspace.timeapi_law.id
+  enabled_log {
+    category = "guard"
+  }
 
-#   enabled_log {
-#     category = "kube-apiserver"
-#   }
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
 
-#   enabled_log {
-#     category = "kube-controller-manager"
-#   }
-
-#   enabled_log {
-#     category = "kube-scheduler"
-#   }
-
-#   enabled_log {
-#     category = "kube-audit-admin"
-#   }
-
-#   enabled_log {
-#     category = "kube-audit"
-#   }
-
-#   enabled_metric {
-#     category = "AllMetrics"
-#   }
-# }
-
-# resource "azurerm_dashboard_grafana" "timeapi_grafana" {
-#   name                = "timeapi-grafana"
-#   location            = azurerm_resource_group.time_api_rg.location
-#   resource_group_name = azurerm_resource_group.time_api_rg.name
-
-#   grafana_major_version             = 11
-#   api_key_enabled                   = true
-#   deterministic_outbound_ip_enabled = true
-#   public_network_access_enabled     = true
-
-#   identity {
-#     type = "SystemAssigned"
-#   }
-#   sku = "Standard"
-
-#   azure_monitor_workspace_integrations {
-#     resource_id = azurerm_monitor_workspace.monitor_workspace.id
-#   }
-
-#   depends_on = [module.nginx-controller]
-# }
-
-# # Create Azure Disks for monitoring components
-# resource "azurerm_managed_disk" "prometheus" {
-#   name                = "prometheus-disk"
-#   location            = azurerm_resource_group.time_api_rg.location
-#   resource_group_name = azurerm_resource_group.time_api_rg.name
-#   storage_account_type = "Standard_LRS"
-#   create_option        = "Empty"
-#   disk_size_gb         = 50
-# }
-
-# resource "azurerm_managed_disk" "alertmanager" {
-#   name                = "alertmanager-disk"
-#   location            = azurerm_resource_group.time_api_rg.location
-#   resource_group_name = azurerm_resource_group.time_api_rg.name
-#   storage_account_type = "Standard_LRS"
-#   create_option        = "Empty"
-#   disk_size_gb         = 10
-# }
-
-# resource "azurerm_managed_disk" "grafana" {
-#   name                = "grafana-disk"
-#   location            = azurerm_resource_group.time_api_rg.location
-#   resource_group_name = azurerm_resource_group.time_api_rg.name
-#   storage_account_type = "Standard_LRS"
-#   create_option        = "Empty"
-#   disk_size_gb         = 10
-# }
-
-# Create monitoring namespace
 resource "kubernetes_namespace_v1" "monitoring" {
   metadata {
     name = "monitoring"
   }
-  depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
+  depends_on = [azurerm_kubernetes_cluster.kronos_cluster]
 }
 
-# Deploy kube-prometheus-stack with Azure storage class
 resource "helm_release" "kube_prometheus_stack" {
   name             = "kube-prometheus-stack"
   repository       = "https://prometheus-community.github.io/helm-charts"
@@ -153,38 +65,38 @@ resource "helm_release" "kube_prometheus_stack" {
 
   set = [
     {
-        name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName"
-        value = "default"
+      name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName"
+      value = "default"
     },
     {
-        name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
-        value = "10Gi"
+      name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
+      value = "10Gi"
     },
     {
-        name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.storageClassName"
-        value = "default"
+      name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.storageClassName"
+      value = "default"
     },
     {
-        name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.resources.requests.storage"
-        value = "5Gi"
+      name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.resources.requests.storage"
+      value = "5Gi"
     },
     {
-        name  = "grafana.persistence.storageClassName"
-        value = "default"
+      name  = "grafana.persistence.storageClassName"
+      value = "default"
     },
     {
-        name  = "grafana.persistence.size"
-        value = "5Gi"
+      name  = "grafana.persistence.size"
+      value = "5Gi"
     },
     {
-        name  = "grafana.adminPassword"
-        value = "admin"
+      name  = "grafana.adminPassword"
+      value = "admin"
     }
   ]
 
   depends_on = [
     kubernetes_namespace_v1.monitoring,
     module.nginx-controller,
-    azurerm_kubernetes_cluster.time_api_cluster
+    azurerm_kubernetes_cluster.kronos_cluster
   ]
 }
