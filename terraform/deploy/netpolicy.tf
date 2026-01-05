@@ -16,7 +16,7 @@
 #     policy_types = ["Ingress", "Egress"]
 #    }
 
-#   depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
+#   depends_on = [azurerm_kubernetes_cluster.kronos_cluster]
 # }
 
 # resource "kubernetes_network_policy_v1" "allow_dns" {

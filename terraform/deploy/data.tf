@@ -8,11 +8,11 @@ data "azuread_client_config" "current" {}
 
 data "azurerm_client_config" "current" {}
 
-data "azurerm_kubernetes_cluster" "time_api_cluster" {
-  name                = azurerm_kubernetes_cluster.time_api_cluster.name
-  resource_group_name = azurerm_kubernetes_cluster.time_api_cluster.resource_group_name
+data "azurerm_kubernetes_cluster" "kronos_cluster" {
+  name                = azurerm_kubernetes_cluster.kronos_cluster.name
+  resource_group_name = azurerm_kubernetes_cluster.kronos_cluster.resource_group_name
 
-  depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
+  depends_on = [azurerm_kubernetes_cluster.kronos_cluster]
 }
 
 data "kubernetes_service_v1" "nginx_ingress" {

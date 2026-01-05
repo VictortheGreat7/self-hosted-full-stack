@@ -1,10 +1,10 @@
-resource "azurerm_kubernetes_cluster" "time_api_cluster" {
-  name                = "aks-${azurerm_resource_group.time_api_rg.name}-cluster"
-  resource_group_name = azurerm_resource_group.time_api_rg.name
-  location            = azurerm_resource_group.time_api_rg.location
-  dns_prefix          = "dns-${azurerm_resource_group.time_api_rg.name}-cluster"
+resource "azurerm_kubernetes_cluster" "kronos_cluster" {
+  name                = "aks-${azurerm_resource_group.kronos_rg.name}-cluster"
+  resource_group_name = azurerm_resource_group.kronos_rg.name
+  location            = azurerm_resource_group.kronos_rg.location
+  dns_prefix          = "dns-${azurerm_resource_group.kronos_rg.name}"
   kubernetes_version  = data.azurerm_kubernetes_service_versions.current.default_version
-  node_resource_group = "nrg-aks-${azurerm_resource_group.time_api_rg.name}-cluster"
+  node_resource_group = "aks-${azurerm_resource_group.kronos_rg.name}-nrg"
 
   private_cluster_enabled             = true
   private_cluster_public_fqdn_enabled = false
@@ -17,7 +17,7 @@ resource "azurerm_kubernetes_cluster" "time_api_cluster" {
     min_count            = 1
     os_disk_size_gb      = 30
     type                 = "VirtualMachineScaleSets"
-    vnet_subnet_id       = azurerm_subnet.time_api_subnet.id
+    vnet_subnet_id       = azurerm_subnet.kronos_subnet.id
     node_labels = {
       "nodepool-type" = "system"
       "environment"   = "test"
@@ -36,7 +36,7 @@ resource "azurerm_kubernetes_cluster" "time_api_cluster" {
 
   azure_active_directory_role_based_access_control {
     azure_rbac_enabled     = true
-    admin_group_object_ids = [azuread_group.time_api_admins.object_id]
+    admin_group_object_ids = [azuread_group.kronos_admins.object_id]
   }
 
   network_profile {
@@ -51,10 +51,17 @@ resource "azurerm_kubernetes_cluster" "time_api_cluster" {
     }
   }
 
+  oms_agent {
+    log_analytics_workspace_id = azurerm_log_analytics_workspace.kronos_law.id
+    msi_auth_for_monitoring_enabled = true
+  }
+
   cost_analysis_enabled = true
   sku_tier              = "Standard"
 
-  depends_on = [azuread_group.time_api_admins, azurerm_subnet_nat_gateway_association.time_api_natgw_subnet_association, azurerm_nat_gateway_public_ip_association.time_api_natgw_public_ip_association]
+  depends_on = [azuread_group.kronos_admins, azurerm_subnet_nat_gateway_association.kronos_natgw_subnet_assoc,
+    azurerm_nat_gateway_public_ip_association.kronos_natgw_public_ip_assoc
+  ]
 
   tags = {
     Environment = "test"
@@ -62,27 +69,26 @@ resource "azurerm_kubernetes_cluster" "time_api_cluster" {
 }
 
 provider "kubernetes" {
-  host                   = azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].host
-  client_certificate     = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].client_certificate)
-  client_key             = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].client_key)
-  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].cluster_ca_certificate)
+  host                   = azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].host
+  client_certificate     = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].client_certificate)
+  client_key             = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].client_key)
+  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].cluster_ca_certificate)
 }
 
 provider "helm" {
   kubernetes = {
-    host = azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].host
-
-    client_certificate     = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].client_certificate)
-    client_key             = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].client_key)
-    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].cluster_ca_certificate)
+    host                   = azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].cluster_ca_certificate)
   }
 }
 
 provider "kubectl" {
-  host                   = azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].host
-  client_certificate     = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].client_certificate)
-  client_key             = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].client_key)
-  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config[0].cluster_ca_certificate)
+  host                   = azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].host
+  client_certificate     = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].client_certificate)
+  client_key             = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].client_key)
+  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config[0].cluster_ca_certificate)
 }
 
 resource "kubernetes_namespace_v1" "kronos" {
@@ -90,7 +96,7 @@ resource "kubernetes_namespace_v1" "kronos" {
     name = "kronos"
   }
 
-  depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
+  depends_on = [azurerm_kubernetes_cluster.kronos_cluster]
 }
 
 resource "kubernetes_config_map_v1" "kronos_config" {
@@ -105,7 +111,7 @@ resource "kubernetes_config_map_v1" "kronos_config" {
 
   depends_on = [
     kubernetes_namespace_v1.kronos,
-    azurerm_kubernetes_cluster.time_api_cluster
+    azurerm_kubernetes_cluster.kronos_cluster
   ]
 }
 
@@ -115,23 +121,15 @@ module "nginx-controller" {
 
   timeout = 900
 
-  depends_on = [azurerm_kubernetes_cluster.time_api_cluster]
+  depends_on = [azurerm_kubernetes_cluster.kronos_cluster]
 }
 
-# module "monitoring" {
-#   source                 = "git::https://github.com/VictortheGreat7/terraform-kubernetes-monitoring"
-#   nfs_endpoint           = "10.10.10.10"
-#   domain                 = data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip
-#   tls                    = "secret-tls"
-#   grafana_admin_password = "admin"
-# }
-
 output "aks_cluster_name" {
-  value = azurerm_kubernetes_cluster.time_api_cluster.name
+  value = azurerm_kubernetes_cluster.kronos_cluster.name
 }
 
 output "kube_config" {
-  value     = azurerm_kubernetes_cluster.time_api_cluster.kube_admin_config
+  value     = azurerm_kubernetes_cluster.kronos_cluster.kube_admin_config
   sensitive = true
 }
 
