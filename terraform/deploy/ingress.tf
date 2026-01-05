@@ -1,5 +1,4 @@
-# This makes sure the ingress controller's admission webhook is ready before creating ingress resources.
-
+# Ingress Webhook Check: This makes sure the ingress controller's admission webhook is ready before creating ingress resources.
 resource "null_resource" "wait_for_ingress_webhook" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
@@ -7,7 +6,7 @@ resource "null_resource" "wait_for_ingress_webhook" {
       set -e
 
       echo "Getting AKS credentials..."
-      az aks get-credentials --resource-group "${azurerm_kubernetes_cluster.time_api_cluster.resource_group_name}" --name "${azurerm_kubernetes_cluster.time_api_cluster.name}" --overwrite-existing
+      az aks get-credentials --resource-group "${azurerm_kubernetes_cluster.kronos_cluster.resource_group_name}" --name "${azurerm_kubernetes_cluster.kronos_cluster.name}" --overwrite-existing
 
       echo "Installing kubelogin..."
       sudo az aks install-cli
@@ -53,6 +52,7 @@ resource "null_resource" "wait_for_ingress_webhook" {
   depends_on = [module.nginx-controller]
 }
 
+# Service Account for Ingress Webhook Check
 resource "kubernetes_service_account_v1" "check_ingress_sa" {
   metadata {
     name      = "check-ingress-sa"
@@ -62,6 +62,7 @@ resource "kubernetes_service_account_v1" "check_ingress_sa" {
   depends_on = [null_resource.wait_for_ingress_webhook]
 }
 
+# Role for Ingress Check Service Account
 resource "kubernetes_role_v1" "check_ingress_role" {
   metadata {
     name      = "check-ingress-role"
@@ -77,6 +78,7 @@ resource "kubernetes_role_v1" "check_ingress_role" {
   depends_on = [kubernetes_service_account_v1.check_ingress_sa]
 }
 
+# Role Binding for Ingress Check Service Account
 resource "kubernetes_role_binding_v1" "check_ingress_binding" {
   metadata {
     name      = "check-ingress-binding"
@@ -98,6 +100,7 @@ resource "kubernetes_role_binding_v1" "check_ingress_binding" {
   depends_on = [kubernetes_role_v1.check_ingress_role]
 }
 
+# Ingress Webhook Check Job
 resource "kubernetes_job_v1" "wait_for_ingress_webhook" {
   metadata {
     name      = "check-ingress-webhook"
@@ -143,7 +146,7 @@ resource "kubernetes_job_v1" "wait_for_ingress_webhook" {
   depends_on = [null_resource.wait_for_ingress_webhook]
 }
 
-# Ingress Configuration for routing backend traffic
+# Ingress Configuration for backend traffic
 resource "kubernetes_ingress_v1" "kronos_backend" {
   metadata {
     name      = "kronos-backend-ingress"
@@ -217,6 +220,7 @@ resource "kubernetes_ingress_v1" "kronos_frontend" {
   ]
 }
 
+# Ingress Configuration for Monitoring Stack
 resource "kubernetes_ingress_v1" "grafana" {
   metadata {
     name      = "grafana-ingress"
@@ -290,4 +294,16 @@ resource "kubernetes_ingress_v1" "alertmanager" {
     }
   }
   depends_on = [helm_release.kube_prometheus_stack]
+}
+
+output "grafana_ingress" {
+  value       = kubernetes_ingress_v1.grafana.spec[0].rule[0].host
+}
+
+output "prometheus_ingress" {
+  value       = kubernetes_ingress_v1.prometheus.spec[0].rule[0].host
+}
+
+output "alertmanager_ingress" {
+  value       = kubernetes_ingress_v1.alertmanager.spec[0].rule[0].host
 }
