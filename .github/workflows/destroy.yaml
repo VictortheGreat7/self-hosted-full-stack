@@ -69,6 +69,13 @@ jobs:
           }
         done
       working-directory: ./terraform
+    - name: Commit Terraform Lock File
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "chore: update terraform.lock.hcl"
+        file_pattern: "terraform/.terraform.lock.hcl"
+        commit_user_name: "github-actions[bot]"
+        commit_user_email: "github-actions[bot]@users.noreply.github.com"
     
   destroy-runner-vm:
     needs: destroy-cluster
@@ -116,4 +123,10 @@ jobs:
 
         terraform destroy --auto-approve
       working-directory: ./terraform
-
+    - name: Commit Terraform Lock File
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "chore: update terraform.lock.hcl"
+        file_pattern: "terraform/.terraform.lock.hcl"
+        commit_user_name: "github-actions[bot]"
+        commit_user_email: "github-actions[bot]@users.noreply.github.com"

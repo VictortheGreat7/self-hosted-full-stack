@@ -2,9 +2,9 @@ name: Provision Runner VM, Azure Kubernetes Infrastructure and Deploy API
 
 # This workflow will run on pushes to the main branch and manual triggers
 on:
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -141,7 +141,13 @@ jobs:
 
           terraform apply --auto-approve
         working-directory: ./terraform
-
+      - name: Commit Terraform Lock File
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update terraform.lock.hcl"
+          file_pattern: "terraform/.terraform.lock.hcl"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
       - name: Wait for VM to be ready
         run: |
           echo "Waiting for runner VM to be ready..."
@@ -198,3 +204,10 @@ jobs:
 
         terraform apply --auto-approve
       working-directory: ./terraform
+    - name: Commit Terraform Lock File
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "chore: update terraform.lock.hcl"
+        file_pattern: "terraform/.terraform.lock.hcl"
+        commit_user_name: "github-actions[bot]"
+        commit_user_email: "github-actions[bot]@users.noreply.github.com"
