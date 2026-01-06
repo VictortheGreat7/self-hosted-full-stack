@@ -41,6 +41,10 @@ resource "kubernetes_deployment_v1" "kronos_backend" {
         container {
           name  = "kronos-backend"
           image = "victorthegreat7/kronos-backend:latest"
+          env {
+            name  = "TEMPO_ENDPOINT"
+            value = "tempo.monitoring.svc.cluster.local:4317"
+          }
 
           port {
             container_port = 5000

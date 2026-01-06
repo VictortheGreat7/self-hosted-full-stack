@@ -146,6 +146,115 @@ resource "kubernetes_job_v1" "wait_for_ingress_webhook" {
   depends_on = [null_resource.wait_for_ingress_webhook]
 }
 
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
+resource "cloudflare_dns_record" "kronos" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.subdomain
+  value   = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+  type    = "A"
+  ttl     = 1
+  proxied = true
+
+  depends_on = [module.nginx-controller]
+}
+
+resource "helm_release" "cert_manager" {
+  name       = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  version    = "v1.19.2"
+
+  create_namespace = true
+  namespace        = "cert-manager"
+
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+
+  timeout = 600
+
+  depends_on = [module.nginx-controller]
+}
+
+resource "kubernetes_secret_v1" "cloudflare_api" {
+  metadata {
+    name      = "cloudflare-api"
+    namespace = "cert-manager"
+  }
+
+  data = {
+    api-token = var.cloudflare_api_token
+  }
+
+  type = "Opaque"
+
+  depends_on = [helm_release.cert_manager]
+}
+
+resource "helm_release" "cert_manager_prod_issuer" {
+  chart      = "cert-manager-issuers"
+  name       = "cert-manager-prod-issuer"
+  version    = "0.3.0"
+  repository = "https://charts.adfinis.com"
+  namespace  = "cert-manager"
+
+  values = [
+    <<-EOT
+clusterIssuers:
+  - name: letsencrypt-prod
+    spec:
+      acme:
+        email: "greatvictor.anjorin@gmail.com"
+        server: "https://acme-v02.api.letsencrypt.org/directory"
+        privateKeySecretRef:
+          name: letsencrypt-prod
+        solvers:
+          - dns01:
+              cloudflare:
+                email: "greatvictor.anjorin@gmail.com"
+                apitokensecret:
+                  name: cloudflare-api
+                  key: api-token               
+EOT
+  ]
+
+  depends_on = [helm_release.cert_manager, kubernetes_secret_v1.cloudflare_api]
+}
+
+# resource "helm_release" "cert_manager_stag_issuer" {
+#   chart      = "cert-manager-issuers"
+#   name       = "cert-manager-stag-issuer"
+#   version    = "0.3.0"
+#   repository = "https://charts.adfinis.com"
+#   namespace  = "cert-manager"
+
+#   values = [
+#     <<-EOT
+# clusterIssuers:
+#   - name: letsencrypt-staging
+#     spec:
+#       acme:
+#         email: "greatvictor.anjorin@gmail.com"
+#         server: "https://acme-staging-v02.api.letsencrypt.org/directory"
+#         privateKeySecretRef:
+#           name: letsencrypt-staging
+#         solvers:
+#           - dns01:
+#               cloudflare:
+#                 email: "greatvictor.anjorin@gmail.com"
+#                 apitokensecret:
+#                   name: cloudflare-api
+#                   key: api-token               
+# EOT
+#   ]
+
+#   depends_on = [helm_release.cert_manager, kubernetes_secret_v1.cloudflare_api]
+# }
+
 # Ingress Configuration for backend traffic
 resource "kubernetes_ingress_v1" "kronos_backend" {
   metadata {
@@ -153,13 +262,21 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
     namespace = "kronos"
     annotations = {
       "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
+      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
     }
   }
 
   spec {
     ingress_class_name = "nginx"
 
+    tls {
+      hosts      = ["${var.subdomain}.${var.domain}"]
+      secret_name = "kronos-backend-tls"
+    }
+
     rule {
+      host = "${var.subdomain}.${var.domain}"
       http {
         # Route /api/* to backend
         path {
@@ -181,7 +298,8 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
   depends_on = [
     kubernetes_service_v1.kronos_backend,
     null_resource.wait_for_ingress_webhook,
-    kubernetes_job_v1.wait_for_ingress_webhook
+    kubernetes_job_v1.wait_for_ingress_webhook,
+    helm_release.cert_manager_prod_issuer
   ]
 }
 
@@ -190,12 +308,21 @@ resource "kubernetes_ingress_v1" "kronos_frontend" {
   metadata {
     name      = "kronos-frontend-ingress"
     namespace = "kronos"
+    annotations = {
+      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
   }
 
   spec {
     ingress_class_name = "nginx"
+    tls {
+      hosts      = ["${var.subdomain}.${var.domain}"]
+      secret_name = "kronos-frontend-tls"
+    }
 
     rule {
+      host = "${var.subdomain}.${var.domain}"
       http {
         path {
           path      = "/"
@@ -216,7 +343,8 @@ resource "kubernetes_ingress_v1" "kronos_frontend" {
   depends_on = [
     kubernetes_service_v1.kronos_frontend,
     null_resource.wait_for_ingress_webhook,
-    kubernetes_job_v1.wait_for_ingress_webhook
+    kubernetes_job_v1.wait_for_ingress_webhook,
+    helm_release.cert_manager_prod_issuer
   ]
 }
 
@@ -225,11 +353,20 @@ resource "kubernetes_ingress_v1" "grafana" {
   metadata {
     name      = "grafana-ingress"
     namespace = "monitoring"
+    annotations = {
+      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
   }
   spec {
     ingress_class_name = "nginx"
+    tls {
+      host      = "grafana.${var.subdomain}.${var.domain}"
+      secret_name = "kronos-grafana-tls"
+    }
+
     rule {
-      host = "grafana.${data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip}.nip.io"
+      host = "grafana.${var.subdomain}.${var.domain}"
       http {
         path {
           path = "/"
@@ -243,18 +380,27 @@ resource "kubernetes_ingress_v1" "grafana" {
       }
     }
   }
-  depends_on = [helm_release.kube_prometheus_stack]
+  depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
 }
 
 resource "kubernetes_ingress_v1" "prometheus" {
   metadata {
     name      = "prometheus-ingress"
     namespace = "monitoring"
+    annotations = {
+      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
   }
   spec {
     ingress_class_name = "nginx"
+    tls {
+      host      = "prometheus.${var.subdomain}.${var.domain}"
+      secret_name = "kronos-prometheus-tls"
+    }
+
     rule {
-      host = "prometheus.${data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip}.nip.io"
+      host = "prometheus.${var.subdomain}.${var.domain}"
       http {
         path {
           path = "/"
@@ -268,18 +414,27 @@ resource "kubernetes_ingress_v1" "prometheus" {
       }
     }
   }
-  depends_on = [helm_release.kube_prometheus_stack]
+  depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
 }
 
 resource "kubernetes_ingress_v1" "alertmanager" {
   metadata {
     name      = "alertmanager-ingress"
     namespace = "monitoring"
+    annotations = {
+      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
   }
   spec {
     ingress_class_name = "nginx"
+    tls {
+      host      = "alertmanager.${var.subdomain}.${var.domain}"
+      secret_name = "kronos-alertmanager-tls"
+    }
+
     rule {
-      host = "alertmanager.${data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip}.nip.io"
+      host = "alertmanager.${var.subdomain}.${var.domain}"
       http {
         path {
           path = "/"
@@ -293,7 +448,40 @@ resource "kubernetes_ingress_v1" "alertmanager" {
       }
     }
   }
-  depends_on = [helm_release.kube_prometheus_stack]
+  depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
+}
+
+resource "kubernetes_ingress_v1" "tempo" {
+  metadata {
+    name      = "tempo-ingress"
+    namespace = "monitoring"
+    annotations = {
+      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
+  }
+  spec {
+    ingress_class_name = "nginx"
+    tls {
+      host      = "tempo.${var.subdomain}.${var.domain}"
+      secret_name = "kronos-tempo-tls"
+    }
+    rule {
+      host = "tempo.${var.subdomain}.${var.domain}"
+      http {
+        path {
+          path = "/"
+          backend {
+            service {
+              name = "tempo"
+              port { number = 3100 }
+            }
+          }
+        }
+      }
+    }
+  }
+  depends_on = [helm_release.tempo]
 }
 
 output "grafana_ingress" {
@@ -306,4 +494,8 @@ output "prometheus_ingress" {
 
 output "alertmanager_ingress" {
   value       = kubernetes_ingress_v1.alertmanager.spec[0].rule[0].host
+}
+
+output "tempo_ingress" {
+  value       = kubernetes_ingress_v1.tempo.spec[0].rule[0].host
 }
