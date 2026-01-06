@@ -35,6 +35,7 @@ jobs:
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         USER_OBJECT_ID: ${{ secrets.MY_USER_OBJECT_ID }}
+        RUNNER_TOKEN: ${{ secrets.RUNNER_TOKEN }}
         CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
       run: |
@@ -48,6 +49,7 @@ jobs:
         {
           "my_user_object_id": "$USER_OBJECT_ID",
           "azure_subscription": "$ARM_SUBSCRIPTION_ID",
+          "github_runner_token": "$RUNNER_TOKEN",
           "cloudflare_api_token": "$CLOUDFLARE_TOKEN",
           "cloudflare_zone_id": "$CLOUDFLARE_ZONE_ID"
         }
@@ -115,6 +117,7 @@ jobs:
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         USER_OBJECT_ID: ${{ secrets.MY_USER_OBJECT_ID }}
+        RUNNER_TOKEN: ${{ secrets.RUNNER_TOKEN }}
       run: |
         mkdir -p ~/.terraform.d/plugin-cache
         echo 'plugin_cache_dir   = "$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
@@ -124,7 +127,8 @@ jobs:
 
         cat <<EOF > terraform.tfvars.json
         {
-          "my_user_object_id": "$USER_OBJECT_ID"
+          "my_user_object_id": "$USER_OBJECT_ID",
+          "github_runner_token": "$RUNNER_TOKEN"
         }
         EOF
 
