@@ -4,9 +4,45 @@ from datetime import datetime
 import pytz
 from prometheus_flask_exporter import PrometheusMetrics
 from prometheus_client import Counter, Gauge, Histogram
+from opentelemetry import trace
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.exporter.otlp. proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry. sdk.resources import Resource
+import os
+
+# Configure OpenTelemetry
+resource = Resource(attributes={
+    "service.name": "kronos-backend",
+    "service.version": "1.0.0",
+    "deployment.environment": "production"
+})
+
+# Set up the tracer provider
+tracer_provider = TracerProvider(resource=resource)
+trace.set_tracer_provider(tracer_provider)
+
+# Configure OTLP exporter to send traces to Tempo
+tempo_endpoint = os.getenv("TEMPO_ENDPOINT", "tempo.monitoring.svc.cluster.local:4317")
+otlp_exporter = OTLPSpanExporter(
+    endpoint=tempo_endpoint,
+    insecure=True  # Use True for internal cluster communication
+)
+
+# Add span processor to tracer provider
+tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+
+# Get tracer
+tracer = trace.get_tracer(__name__)
 
 app = Flask(__name__)
 CORS(app)
+
+# Instrument Flask app with OpenTelemetry
+FlaskInstrumentor().instrument_app(app)
+RequestsInstrumentor().instrument()
 
 metrics = PrometheusMetrics(app)
 metrics.info('app_info', 'World Clock Backend Application', version='1.0.0')
@@ -22,19 +58,26 @@ frontend_api_latency = Histogram(
 @app.route('/api/metrics', methods=['POST'])
 def receive_metrics():
     """Receive custom metrics from frontend"""
-    data = request.get_json()
-    metric = data.get('metric')
-    value = data.get('value')
-    endpoint = data.get('endpoint', 'unknown')
+    with tracer.start_as_current_span("receive_metrics") as span:
+        data = request.get_json()
+        metric = data.get('metric')
+        value = data.get('value')
+        endpoint = data.get('endpoint', 'unknown')
+        
+        # Add attributes to span
+        span.set_attribute("metric.type", metric)
+        span.set_attribute("metric.value", value)
+        span.set_attribute("metric.endpoint", endpoint)
 
-    if metric == 'api_request_duration_ms':
-        frontend_api_latency.labels(endpoint=endpoint).observe(value / 1000.0)
-    elif metric == 'api_request_errors':
-        frontend_api_errors.inc()
-    else:
-        return jsonify({'error': 'Unknown metric'}), 400
+        if metric == 'api_request_duration_ms':
+            frontend_api_latency.labels(endpoint=endpoint).observe(value / 1000.0)
+        elif metric == 'api_request_errors':
+            frontend_api_errors.inc()
+        else:
+            span.set_attribute("error", True)
+            return jsonify({'error': 'Unknown metric'}), 400
 
-    return jsonify({'status': 'ok'})
+        return jsonify({'status': 'ok'})
 
 # Major cities with their timezones
 MAJOR_CITIES = {
