@@ -1,11 +1,9 @@
-# This file contains defines some output requests to the Time API Azure Kubernetes Infrastructure.
-
 output "aks_resource_group" {
-  value = azurerm_resource_group.time_api_rg.name
+  value = azurerm_resource_group.kronos_rg.name
 }
 
 output "natgtw_ip" {
-  value = azurerm_public_ip.time_api_public_ip
+  value = azurerm_public_ip.kronos_public_ip
 }
 
 output "ssh_command" {

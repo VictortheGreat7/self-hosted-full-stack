@@ -1,17 +1,17 @@
 # This file contains the main Terraform configuration for creating an Azure Kubernetes Service (AKS) cluster for the Time API application.
 
-resource "random_pet" "time_api" {
+resource "random_pet" "kronos" {
 }
 
-resource "azurerm_resource_group" "time_api_rg" {
-  name     = "rg-${random_pet.time_api.id}-time-api"
+resource "azurerm_resource_group" "kronos_rg" {
+  name     = "rg-${random_pet.kronos.id}-kronos"
   location = var.region
 }
 
 resource "azurerm_linux_virtual_machine" "gha_vm" {
-  name                = "gha-${azurerm_resource_group.time_api_rg.name}-vm"
-  resource_group_name = azurerm_resource_group.time_api_rg.name
-  location            = azurerm_resource_group.time_api_rg.location
+  name                = "gha-${azurerm_resource_group.kronos_rg.name}-vm"
+  resource_group_name = azurerm_resource_group.kronos_rg.name
+  location            = azurerm_resource_group.kronos_rg.location
   size                = "Standard_D2s_v3"
   admin_username      = "azureuser"
   network_interface_ids = [
@@ -22,8 +22,6 @@ resource "azurerm_linux_virtual_machine" "gha_vm" {
     username   = "azureuser"
     public_key = file("${path.module}/ssh_keys/id_rsa.pub")
   }
-
-  admin_password = "Terraform123!" # Only for demo; use SSH in production
 
   os_disk {
     caching              = "ReadWrite"

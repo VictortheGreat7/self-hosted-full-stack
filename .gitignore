@@ -1,10 +1,9 @@
-*.terraform*
+*.terraform
 *alerts.tf*
 *dashboard.tf*
 prev_attempts/
 **microservices/
 /*.sh
-GeminiREADME.md
 id_rsa
 
 # Node

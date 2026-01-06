@@ -1,31 +1,31 @@
 # This file contains the network resources for the Time API Azure Kubernetes cluster.
 
-resource "azurerm_virtual_network" "time_api_vnet" {
-  name                = "vnet-${azurerm_resource_group.time_api_rg.name}"
+resource "azurerm_virtual_network" "kronos_vnet" {
+  name                = "vnet-${azurerm_resource_group.kronos_rg.name}"
   address_space       = ["10.240.0.0/16"]
-  location            = azurerm_resource_group.time_api_rg.location
-  resource_group_name = azurerm_resource_group.time_api_rg.name
+  location            = azurerm_resource_group.kronos_rg.location
+  resource_group_name = azurerm_resource_group.kronos_rg.name
 }
 
 resource "azurerm_subnet" "gha_subnet" {
-  name                 = "gha-${azurerm_resource_group.time_api_rg.name}-subnet"
-  resource_group_name  = azurerm_resource_group.time_api_rg.name
-  virtual_network_name = azurerm_virtual_network.time_api_vnet.name
+  name                 = "gha-${azurerm_resource_group.kronos_rg.name}-subnet"
+  resource_group_name  = azurerm_resource_group.kronos_rg.name
+  virtual_network_name = azurerm_virtual_network.kronos_vnet.name
   address_prefixes     = ["10.240.0.0/24"]
 }
 
 resource "azurerm_public_ip" "gha_public_ip" {
-  name                = "gha-${azurerm_resource_group.time_api_rg.name}-publicip"
-  location            = azurerm_resource_group.time_api_rg.location
-  resource_group_name = azurerm_resource_group.time_api_rg.name
+  name                = "gha-${azurerm_resource_group.kronos_rg.name}-publicip"
+  location            = azurerm_resource_group.kronos_rg.location
+  resource_group_name = azurerm_resource_group.kronos_rg.name
   allocation_method   = "Dynamic"
   sku                = "Basic"
 }
 
 resource "azurerm_network_interface" "gha_nic" {
-  name                = "gha-${azurerm_resource_group.time_api_rg.name}-nic"
-  location            = azurerm_resource_group.time_api_rg.location
-  resource_group_name = azurerm_resource_group.time_api_rg.name
+  name                = "gha-${azurerm_resource_group.kronos_rg.name}-nic"
+  location            = azurerm_resource_group.kronos_rg.location
+  resource_group_name = azurerm_resource_group.kronos_rg.name
 
   ip_configuration {
     name                          = "ipconfig1"
@@ -36,9 +36,9 @@ resource "azurerm_network_interface" "gha_nic" {
 }
 
 resource "azurerm_network_security_group" "gha_nsg" {
-  name                = "gha-${azurerm_resource_group.time_api_rg.name}-nsg"
-  location            = azurerm_resource_group.time_api_rg.location
-  resource_group_name = azurerm_resource_group.time_api_rg.name
+  name                = "gha-${azurerm_resource_group.kronos_rg.name}-nsg"
+  location            = azurerm_resource_group.kronos_rg.location
+  resource_group_name = azurerm_resource_group.kronos_rg.name
 
   security_rule {
     name                       = "SSH"
@@ -84,22 +84,22 @@ resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
 
 data "azurerm_public_ip" "gha_dynamic_ip" {
   name                = azurerm_public_ip.gha_public_ip.name
-  resource_group_name = azurerm_resource_group.time_api_rg.name
+  resource_group_name = azurerm_resource_group.kronos_rg.name
 
   depends_on = [azurerm_linux_virtual_machine.gha_vm]
 }
 
-resource "azurerm_subnet" "time_api_subnet" {
-  name                 = "subnet-${azurerm_resource_group.time_api_rg.name}"
-  resource_group_name  = azurerm_resource_group.time_api_rg.name
-  virtual_network_name = azurerm_virtual_network.time_api_vnet.name
+resource "azurerm_subnet" "kronos_subnet" {
+  name                 = "subnet-${azurerm_resource_group.kronos_rg.name}"
+  resource_group_name  = azurerm_resource_group.kronos_rg.name
+  virtual_network_name = azurerm_virtual_network.kronos_vnet.name
   address_prefixes     = ["10.240.4.0/22"]
 }
 
-resource "azurerm_network_security_group" "time_api_nsg" {
-  name                = "nsg-${azurerm_resource_group.time_api_rg.name}"
-  resource_group_name = azurerm_resource_group.time_api_rg.name
-  location            = azurerm_resource_group.time_api_rg.location
+resource "azurerm_network_security_group" "kronos_nsg" {
+  name                = "nsg-${azurerm_resource_group.kronos_rg.name}"
+  resource_group_name = azurerm_resource_group.kronos_rg.name
+  location            = azurerm_resource_group.kronos_rg.location
 
   security_rule {
     name                       = "allow-https-access"
@@ -150,15 +150,15 @@ resource "azurerm_network_security_group" "time_api_nsg" {
   }
 }
 
-resource "azurerm_subnet_network_security_group_association" "time_api_nsg_subnet_association" {
-  subnet_id                 = azurerm_subnet.time_api_subnet.id
-  network_security_group_id = azurerm_network_security_group.time_api_nsg.id
+resource "azurerm_subnet_network_security_group_association" "kronos_nsg_subnet_assoc" {
+  subnet_id                 = azurerm_subnet.kronos_subnet.id
+  network_security_group_id = azurerm_network_security_group.kronos_nsg.id
 }
 
-resource "azurerm_nat_gateway" "time_api_nat_gateway" {
-  name                    = "natgw-${azurerm_resource_group.time_api_rg.name}"
-  location                = azurerm_resource_group.time_api_rg.location
-  resource_group_name     = azurerm_resource_group.time_api_rg.name
+resource "azurerm_nat_gateway" "kronos_natgw" {
+  name                    = "natgw-${azurerm_resource_group.kronos_rg.name}"
+  location                = azurerm_resource_group.kronos_rg.location
+  resource_group_name     = azurerm_resource_group.kronos_rg.name
   sku_name                = "Standard"
   idle_timeout_in_minutes = 10
 
@@ -167,20 +167,20 @@ resource "azurerm_nat_gateway" "time_api_nat_gateway" {
   }
 }
 
-resource "azurerm_public_ip" "time_api_public_ip" {
-  name                = "public-ip-${azurerm_resource_group.time_api_rg.name}"
-  location            = azurerm_resource_group.time_api_rg.location
-  resource_group_name = azurerm_resource_group.time_api_rg.name
+resource "azurerm_public_ip" "kronos_public_ip" {
+  name                = "public-ip-${azurerm_resource_group.kronos_rg.name}"
+  location            = azurerm_resource_group.kronos_rg.location
+  resource_group_name = azurerm_resource_group.kronos_rg.name
   allocation_method   = "Static"
   sku                 = "Standard"
 }
 
-resource "azurerm_subnet_nat_gateway_association" "time_api_natgw_subnet_association" {
-  nat_gateway_id = azurerm_nat_gateway.time_api_nat_gateway.id
-  subnet_id      = azurerm_subnet.time_api_subnet.id
+resource "azurerm_subnet_nat_gateway_association" "kronos_natgw_subnet_assoc" {
+  nat_gateway_id = azurerm_nat_gateway.kronos_natgw.id
+  subnet_id      = azurerm_subnet.kronos_subnet.id
 }
 
-resource "azurerm_nat_gateway_public_ip_association" "time_api_natgw_public_ip_association" {
-  nat_gateway_id       = azurerm_nat_gateway.time_api_nat_gateway.id
-  public_ip_address_id = azurerm_public_ip.time_api_public_ip.id
+resource "azurerm_nat_gateway_public_ip_association" "kronos_natgw_public_ip_assoc" {
+  nat_gateway_id       = azurerm_nat_gateway.kronos_natgw.id
+  public_ip_address_id = azurerm_public_ip.kronos_public_ip.id
 }

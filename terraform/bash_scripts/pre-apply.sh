@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Set variables
-RESOURCE_GROUP_NAME="backend-rg"
-STORAGE_ACCOUNT_NAME="bunnybackend349"
+RESOURCE_GROUP_NAME="tfbackend-rg"
+STORAGE_ACCOUNT_NAME="kronos349"
 CONTAINER_NAME="tfstate"
 REGION="eastus"
 
