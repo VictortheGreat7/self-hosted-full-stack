@@ -2,19 +2,23 @@
 
 terraform {
   required_providers {
-    azuread = ">= 3.4.0"
-    azurerm = ">= 4.34.0"
+    azurerm = ">= 4.57.0"
+    azuread = ">= 3.7.0"
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.37.1"
+      version = ">= 3.0.1"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.5.0"
+      version = ">= 3.1.1"
     }
     kubectl = {
       source  = "alekc/kubectl"
       version = ">= 2.1.3"
+    }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = ">= 5.15.0"
     }
   }
 }
@@ -22,5 +26,5 @@ terraform {
 provider "azurerm" {
   features {}
 
-  subscription_id = "d31507f4-324c-4bd1-abe1-5cdf45cba77d"
+  subscription_id = var.azure_subscription
 }
