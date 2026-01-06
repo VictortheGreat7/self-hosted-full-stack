@@ -125,6 +125,8 @@ jobs:
     needs: [changes]
     if: ${{ needs.changes.outputs.terraform == 'true' }}
     runs-on: self-hosted
+    permissions:
+      contents: write
     steps:
       - name: Checkout current Github repository
         uses: actions/checkout@v4
@@ -191,6 +193,8 @@ jobs:
     needs: [changes, build-backend, modify-infra]
     if: ${{ always() && (needs.modify-infra.result == 'skipped' || needs.modify-infra.result == 'success') && (needs.build-backend.result == 'success') }}
     runs-on: self-hosted
+    permissions:
+      contents: write
     steps:
       - name: Checkout current Github repository
         uses: actions/checkout@v4
@@ -250,6 +254,8 @@ jobs:
     needs: [changes, build-frontend, modify-infra]
     if: ${{ always() && (needs.modify-infra.result == 'skipped' || needs.modify-infra.result == 'success') && (needs.build-frontend.result == 'success') }}
     runs-on: self-hosted
+    permissions:
+      contents: write
     steps:
       - name: Checkout current Github repository
         uses: actions/checkout@v4

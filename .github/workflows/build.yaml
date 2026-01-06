@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch:  
 
 jobs:
   build-backend:
@@ -96,6 +96,8 @@ jobs:
   provision-runner:
     needs: [build-backend, build-frontend]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout current Github repository
         uses: actions/checkout@v4
@@ -161,6 +163,8 @@ jobs:
   build:
     needs: provision-runner
     runs-on: self-hosted
+    permissions:
+      contents: write
     steps:
     - name: Checkout current Github repository
       uses: actions/checkout@v4
