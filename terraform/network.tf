@@ -19,7 +19,7 @@ resource "azurerm_public_ip" "gha_public_ip" {
   location            = azurerm_resource_group.kronos_rg.location
   resource_group_name = azurerm_resource_group.kronos_rg.name
   allocation_method   = "Dynamic"
-  sku                = "Basic"
+  sku                 = "Basic"
 }
 
 resource "azurerm_network_interface" "gha_nic" {

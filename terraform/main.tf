@@ -18,7 +18,7 @@ resource "azurerm_linux_virtual_machine" "gha_vm" {
     azurerm_network_interface.gha_nic.id,
   ]
 
-   admin_ssh_key {
+  admin_ssh_key {
     username   = "azureuser"
     public_key = file("${path.module}/ssh_keys/id_rsa.pub")
   }
@@ -41,7 +41,7 @@ resource "azurerm_linux_virtual_machine" "gha_vm" {
   }))
 
   lifecycle {
-    ignore_changes  = [
+    ignore_changes = [
       custom_data
     ]
   }

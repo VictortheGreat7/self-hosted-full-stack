@@ -52,7 +52,7 @@ resource "azurerm_kubernetes_cluster" "kronos_cluster" {
   }
 
   oms_agent {
-    log_analytics_workspace_id = azurerm_log_analytics_workspace.kronos_law.id
+    log_analytics_workspace_id      = azurerm_log_analytics_workspace.kronos_law.id
     msi_auth_for_monitoring_enabled = true
   }
 

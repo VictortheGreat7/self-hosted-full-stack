@@ -153,9 +153,9 @@ provider "cloudflare" {
 resource "cloudflare_dns_record" "kronos" {
   zone_id = var.cloudflare_zone_id
   name    = var.subdomain
-  value   = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
   type    = "A"
   ttl     = 1
+  content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
   proxied = true
 
   depends_on = [module.nginx-controller]
@@ -170,10 +170,12 @@ resource "helm_release" "cert_manager" {
   create_namespace = true
   namespace        = "cert-manager"
 
-  set {
-    name  = "installCRDs"
-    value = "true"
-  }
+  set = [
+    {
+      name  = "installCRDs"
+      value = "true"
+    }
+  ]
 
   timeout = 600
 
@@ -261,8 +263,8 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
     name      = "kronos-backend-ingress"
     namespace = "kronos"
     annotations = {
-      "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
-      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/rewrite-target"     = "/$2"
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
     }
   }
@@ -271,7 +273,7 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
     ingress_class_name = "nginx"
 
     tls {
-      hosts      = ["${var.subdomain}.${var.domain}"]
+      hosts       = ["${var.subdomain}.${var.domain}"]
       secret_name = "kronos-backend-tls"
     }
 
@@ -309,7 +311,7 @@ resource "kubernetes_ingress_v1" "kronos_frontend" {
     name      = "kronos-frontend-ingress"
     namespace = "kronos"
     annotations = {
-      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
     }
   }
@@ -317,7 +319,7 @@ resource "kubernetes_ingress_v1" "kronos_frontend" {
   spec {
     ingress_class_name = "nginx"
     tls {
-      hosts      = ["${var.subdomain}.${var.domain}"]
+      hosts       = ["${var.subdomain}.${var.domain}"]
       secret_name = "kronos-frontend-tls"
     }
 
@@ -354,14 +356,14 @@ resource "kubernetes_ingress_v1" "grafana" {
     name      = "grafana-ingress"
     namespace = "monitoring"
     annotations = {
-      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
     }
   }
   spec {
     ingress_class_name = "nginx"
     tls {
-      host      = "grafana.${var.subdomain}.${var.domain}"
+      hosts       = ["grafana.${var.subdomain}.${var.domain}"]
       secret_name = "kronos-grafana-tls"
     }
 
@@ -388,14 +390,14 @@ resource "kubernetes_ingress_v1" "prometheus" {
     name      = "prometheus-ingress"
     namespace = "monitoring"
     annotations = {
-      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
     }
   }
   spec {
     ingress_class_name = "nginx"
     tls {
-      host      = "prometheus.${var.subdomain}.${var.domain}"
+      hosts       = ["prometheus.${var.subdomain}.${var.domain}"]
       secret_name = "kronos-prometheus-tls"
     }
 
@@ -422,14 +424,14 @@ resource "kubernetes_ingress_v1" "alertmanager" {
     name      = "alertmanager-ingress"
     namespace = "monitoring"
     annotations = {
-      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
     }
   }
   spec {
     ingress_class_name = "nginx"
     tls {
-      host      = "alertmanager.${var.subdomain}.${var.domain}"
+      hosts       = ["alertmanager.${var.subdomain}.${var.domain}"]
       secret_name = "kronos-alertmanager-tls"
     }
 
@@ -456,16 +458,17 @@ resource "kubernetes_ingress_v1" "tempo" {
     name      = "tempo-ingress"
     namespace = "monitoring"
     annotations = {
-      "cert-manager.io/cluster-issuer"       = "letsencrypt-prod"
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
     }
   }
   spec {
     ingress_class_name = "nginx"
     tls {
-      host      = "tempo.${var.subdomain}.${var.domain}"
+      hosts       = ["tempo.${var.subdomain}.${var.domain}"]
       secret_name = "kronos-tempo-tls"
     }
+
     rule {
       host = "tempo.${var.subdomain}.${var.domain}"
       http {
@@ -485,17 +488,17 @@ resource "kubernetes_ingress_v1" "tempo" {
 }
 
 output "grafana_ingress" {
-  value       = kubernetes_ingress_v1.grafana.spec[0].rule[0].host
+  value = kubernetes_ingress_v1.grafana.spec[0].rule[0].host
 }
 
 output "prometheus_ingress" {
-  value       = kubernetes_ingress_v1.prometheus.spec[0].rule[0].host
+  value = kubernetes_ingress_v1.prometheus.spec[0].rule[0].host
 }
 
 output "alertmanager_ingress" {
-  value       = kubernetes_ingress_v1.alertmanager.spec[0].rule[0].host
+  value = kubernetes_ingress_v1.alertmanager.spec[0].rule[0].host
 }
 
 output "tempo_ingress" {
-  value       = kubernetes_ingress_v1.tempo.spec[0].rule[0].host
+  value = kubernetes_ingress_v1.tempo.spec[0].rule[0].host
 }
