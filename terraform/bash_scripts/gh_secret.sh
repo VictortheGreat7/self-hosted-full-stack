@@ -10,6 +10,8 @@ CLIENT_SECRET=""
 SUBSCRIPTION_ID=""
 TENANT_ID=""
 GITHUB_RUNNER_TOKEN=""
+CLOUDFLARE_TOKEN=""
+CLOUDFLARE_ZONE_ID=""
 
 
 # Azure credentials as JSON
@@ -32,6 +34,8 @@ declare -A secrets=(
   ["ARM_TENANT_ID"]="${TENANT_ID}"
   ["MY_USER_OBJECT_ID"]=""
   ["RUNNER_TOKEN"]="${GITHUB_RUNNER_TOKEN}"
+  ["CLOUDFLARE_TOKEN"]="${CLOUDFLARE_TOKEN}"
+  ["CLOUDFLARE_ZONE_ID"]="${CLOUDFLARE_ZONE_ID}"
 )
 
 # Iterate over the secrets and set them using `gh secret set`
