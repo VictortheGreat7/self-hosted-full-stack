@@ -16,7 +16,7 @@ const provider = new WebTracerProvider({
 
 // Configure OTLP exporter - use HTTP endpoint (4318) for browser
 const exporter = new OTLPTraceExporter({
-  url:  `${window.location.protocol}//tempo.${window.location.hostname. split('. ').slice(1).join('.')}/v1/traces`,
+  url:  `${window.location.protocol}//tempo.${window.location.hostname.split('. ').slice(1).join('.')}/v1/traces`,
 });
 
 // Add span processor
