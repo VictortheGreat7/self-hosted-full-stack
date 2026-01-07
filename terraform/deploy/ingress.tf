@@ -275,12 +275,12 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
     ingress_class_name = "nginx"
 
     tls {
-      hosts       = ["${var.subdomains[0]}.${var.domain}"]
-      secret_name = "kronos-tls"
+      hosts       = ["${var.subdomains[1]}.${var.domain}"]
+      secret_name = "kronos-backend-tls"
     }
 
     rule {
-      host = "${var.subdomains[0]}.${var.domain}"
+      host = "${var.subdomains[1]}.${var.domain}"
       http {
         # Route /api/* to backend
         path {
@@ -353,9 +353,9 @@ resource "kubernetes_ingress_v1" "kronos_frontend" {
 }
 
 # Ingress Configuration for Monitoring Stack
-resource "kubernetes_ingress_v1" "monitoring" {
+resource "kubernetes_ingress_v1" "grafana" {
   metadata {
-    name      = "monitoring-ingress"
+    name      = "grafana-ingress"
     namespace = "monitoring"
     annotations = {
       "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
@@ -365,12 +365,12 @@ resource "kubernetes_ingress_v1" "monitoring" {
   spec {
     ingress_class_name = "nginx"
     tls {
-      hosts       = ["${var.subdomains[1]}.${var.domain}"]
-      secret_name = "kronos-monitoring-tls"
+      hosts       = ["${var.subdomains[2]}.${var.domain}"]
+      secret_name = "kronos-monitoring-grafana-tls"
     }
 
     rule {
-      host = "${var.subdomains[1]}.${var.domain}"
+      host = "${var.subdomains[2]}.${var.domain}"
       http {
         path {
           path = "/grafana"
@@ -384,9 +384,28 @@ resource "kubernetes_ingress_v1" "monitoring" {
         }
       }
     }
+  }
+  depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
+}
+
+resource "kubernetes_ingress_v1" "prometheus" {
+  metadata {
+    name      = "prometheus-ingress"
+    namespace = "monitoring"
+    annotations = {
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
+  }
+  spec {
+    ingress_class_name = "nginx"
+    tls {
+      hosts       = ["${var.subdomains[3]}.${var.domain}"]
+      secret_name = "kronos-monitoring-prometheus-tls"
+    }
 
     rule {
-      host = "${var.subdomains[1]}.${var.domain}"
+      host = "${var.subdomains[3]}.${var.domain}"
       http {
         path {
           path = "/prometheus"
@@ -400,9 +419,28 @@ resource "kubernetes_ingress_v1" "monitoring" {
         }
       }
     }
+  }
+  depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
+}
+
+resource "kubernetes_ingress_v1" "alertmanager" {
+  metadata {
+    name      = "alertmanager-ingress"
+    namespace = "monitoring"
+    annotations = {
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
+  }
+  spec {
+    ingress_class_name = "nginx"
+    tls {
+      hosts       = ["${var.subdomains[4]}.${var.domain}"]
+      secret_name = "kronos-monitoring-alertmanager-tls"
+    }
 
     rule {
-      host = "${var.subdomains[1]}.${var.domain}"
+      host = "${var.subdomains[4]}.${var.domain}"
       http {
         path {
           path = "/alertmanager"
@@ -416,9 +454,28 @@ resource "kubernetes_ingress_v1" "monitoring" {
         }
       }
     }
+  }
+  depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
+}
+
+resource "kubernetes_ingress_v1" "tempo" {
+  metadata {
+    name      = "tempo-ingress"
+    namespace = "monitoring"
+    annotations = {
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
+  }
+  spec {
+    ingress_class_name = "nginx"
+    tls {
+      hosts       = ["${var.subdomains[5]}.${var.domain}"]
+      secret_name = "kronos-monitoring-tempo-tls"
+    }
 
     rule {
-      host = "${var.subdomains[1]}.${var.domain}"
+      host = "${var.subdomains[5]}.${var.domain}"
       http {
         path {
           path = "/tempo"
@@ -437,17 +494,17 @@ resource "kubernetes_ingress_v1" "monitoring" {
 }
 
 output "grafana_ingress" {
-  value = format("%s/grafana", kubernetes_ingress_v1.monitoring.spec[0].rule[0].host)
+  value = kubernetes_ingress_v1.grafana.spec[0].rule[0].host
 }
 
 output "prometheus_ingress" {
-  value = format("%s/prometheus", kubernetes_ingress_v1.monitoring.spec[0].rule[1].host)
+  value = kubernetes_ingress_v1.prometheus.spec[0].rule[0].host
 }
 
 output "alertmanager_ingress" {
-  value = format("%s/alertmanager", kubernetes_ingress_v1.monitoring.spec[0].rule[2].host)
+  value = kubernetes_ingress_v1.alertmanager.spec[0].rule[0].host
 }
 
 output "tempo_ingress" {
-  value = format("%s/tempo", kubernetes_ingress_v1.monitoring.spec[0].rule[3].host)
+  value = kubernetes_ingress_v1.tempo.spec[0].rule[0].host
 }
