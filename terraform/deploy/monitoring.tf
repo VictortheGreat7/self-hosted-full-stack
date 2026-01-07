@@ -31,18 +31,6 @@ resource "azurerm_monitor_diagnostic_setting" "kronos_audit_logs" {
     category = "kube-audit"
   }
 
-  enabled_log {
-    category = "cluster-autoscaler"
-  }
-
-  enabled_log {
-    category = "AuditEvent"
-  }
-
-  enabled_log {
-    category = "guard"
-  }
-
   enabled_metric {
     category = "AllMetrics"
   }

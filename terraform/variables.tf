@@ -36,10 +36,10 @@ variable "cloudflare_zone_id" {
   sensitive   = true
 }
 
-variable "subdomain" {
-  description = "The subdomain to use for the world clock application"
-  type        = string
-  default     = "kronos"
+variable "subdomains" {
+  description = "List of subdomains to create"
+  type        = list(string)
+  default     = ["kronos", "monitoring"]
 }
 
 variable "domain" {
