@@ -254,7 +254,7 @@ resource "cloudflare_dns_record" "kronos" {
   type    = "A"
   ttl     = 1
   content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
-  proxied = false
+  proxied = true
 
   depends_on = [module.nginx-controller]
 }
@@ -311,20 +311,22 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
     namespace = "kronos"
     annotations = {
       "nginx.ingress.kubernetes.io/rewrite-target"     = "/$2"
-      # "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
-      # "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+      "nginx.ingress.kubernetes.io/cors-allow-origin"  = "https://${var.subdomains[0]}.${var.domain}"
+      "nginx.ingress.kubernetes.io/enable-cors"        = "true"
     }
   }
 
   spec {
     ingress_class_name = "nginx"
-    # tls {
-    #   hosts       = ["${var.subdomains[1]}.${var.domain}"]
-    #   secret_name = "kronos-backend-tls"
-    # }
+    tls {
+      hosts       = ["${var.subdomains[1]}.${var.domain}"]
+      secret_name = "kronos-backend-tls"
+    }
 
     rule {
-      # host = "${var.subdomains[1]}.${var.domain}"
+      host = "${var.subdomains[1]}.${var.domain}"
       http {
         # Route /api/* to backend
         path {
