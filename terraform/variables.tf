@@ -40,8 +40,7 @@ variable "subdomains" {
   description = "List of subdomains to create"
   type        = list(string)
   default = [
-    "kronos",
-    "backend",
+    "kronos"
   ]
 }
 

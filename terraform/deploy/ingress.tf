@@ -246,39 +246,39 @@ EOT
 #   depends_on = [helm_release.cert_manager, kubernetes_secret_v1.cloudflare_api]
 # }
 
-# resource "cloudflare_dns_record" "kronos" {
-#   for_each = toset(var.subdomains)
+resource "cloudflare_dns_record" "kronos" {
+  for_each = toset(var.subdomains)
 
-#   zone_id = var.cloudflare_zone_id
-#   name    = each.value
-#   type    = "A"
-#   ttl     = 1
-#   content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
-#   proxied = false
+  zone_id = var.cloudflare_zone_id
+  name    = each.value
+  type    = "A"
+  ttl     = 1
+  content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+  proxied = false
 
-#   depends_on = [module.nginx-controller]
-# }
+  depends_on = [module.nginx-controller]
+}
 
 # Ingress Configuration for routing frontend traffic
 resource "kubernetes_ingress_v1" "kronos_frontend" {
   metadata {
     name      = "kronos-frontend-ingress"
     namespace = "kronos"
-    # annotations = {
-    #   "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
-    #   "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
-    # }
+    annotations = {
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
   }
 
   spec {
     ingress_class_name = "nginx"
-    # tls {
-    #   hosts       = ["${var.subdomains[0]}.${var.domain}"]
-    #   secret_name = "kronos-tls"
-    # }
+    tls {
+      hosts       = ["${var.subdomains[0]}.${var.domain}"]
+      secret_name = "kronos-tls"
+    }
 
     rule {
-      # host = "${var.subdomains[0]}.${var.domain}"
+      host = "${var.subdomains[0]}.${var.domain}"
       http {
         path {
           path      = "/"
@@ -433,32 +433,32 @@ resource "kubernetes_ingress_v1" "alertmanager" {
   depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
 }
 
-resource "kubernetes_ingress_v1" "tempo" {
-  metadata {
-    name      = "tempo-ingress"
-    namespace = "monitoring"
-  }
-  spec {
-    ingress_class_name = "nginx"
+# resource "kubernetes_ingress_v1" "tempo" {
+#   metadata {
+#     name      = "tempo-ingress"
+#     namespace = "monitoring"
+#   }
+#   spec {
+#     ingress_class_name = "nginx"
 
-    rule {
-      host = "tempo.${data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip}.nip.io"
-      http {
-        path {
-          path      = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = "tempo"
-              port { number = 3100 }
-            }
-          }
-        }
-      }
-    }
-  }
-  depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
-}
+#     rule {
+#       host = "tempo.${data.kubernetes_service_v1.nginx_ingress.status.0.load_balancer.0.ingress.0.ip}.nip.io"
+#       http {
+#         path {
+#           path      = "/"
+#           path_type = "Prefix"
+#           backend {
+#             service {
+#               name = "tempo"
+#               port { number = 3100 }
+#             }
+#           }
+#         }
+#       }
+#     }
+#   }
+#   depends_on = [helm_release.kube_prometheus_stack, helm_release.cert_manager_prod_issuer]
+# }
 
 output "grafana_ingress" {
   value = kubernetes_ingress_v1.grafana.spec[0].rule[0].host
@@ -472,6 +472,6 @@ output "alertmanager_ingress" {
   value = kubernetes_ingress_v1.alertmanager.spec[0].rule[0].host
 }
 
-output "tempo_ingress" {
-  value = kubernetes_ingress_v1.tempo.spec[0].rule[0].host
-}
+# output "tempo_ingress" {
+#   value = kubernetes_ingress_v1.tempo.spec[0].rule[0].host
+# }
