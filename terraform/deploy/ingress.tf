@@ -373,7 +373,7 @@ resource "kubernetes_ingress_v1" "grafana" {
       host = "${var.subdomains[2]}.${var.domain}"
       http {
         path {
-          path = "/"
+          path      = "/"
           path_type = "Prefix"
           backend {
             service {
@@ -408,7 +408,7 @@ resource "kubernetes_ingress_v1" "prometheus" {
       host = "${var.subdomains[3]}.${var.domain}"
       http {
         path {
-          path = "/"
+          path      = "/"
           path_type = "Prefix"
           backend {
             service {
@@ -443,7 +443,7 @@ resource "kubernetes_ingress_v1" "alertmanager" {
       host = "${var.subdomains[4]}.${var.domain}"
       http {
         path {
-          path = "/"
+          path      = "/"
           path_type = "Prefix"
           backend {
             service {
@@ -478,7 +478,7 @@ resource "kubernetes_ingress_v1" "tempo" {
       host = "${var.subdomains[5]}.${var.domain}"
       http {
         path {
-          path = "/"
+          path      = "/"
           path_type = "Prefix"
           backend {
             service {
