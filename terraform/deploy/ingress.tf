@@ -320,12 +320,12 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
     ingress_class_name = "nginx"
 
     tls {
-      hosts       = ["${var.subdomains[0]}.${var.domain}"]
-      secret_name = "kronos-tls"
+      hosts       = ["${var.subdomains[1]}.${var.domain}"]
+      secret_name = "kronos-backend-tls"
     }
 
     rule {
-      host = "${var.subdomains[0]}.${var.domain}"
+      host = "${var.subdomains[1]}.${var.domain}"
       http {
         # Route /api/* to backend
         path {
@@ -365,12 +365,12 @@ resource "kubernetes_ingress_v1" "grafana" {
   spec {
     ingress_class_name = "nginx"
     tls {
-      hosts       = ["${var.subdomains[1]}.${var.domain}"]
+      hosts       = ["${var.subdomains[2]}.${var.domain}"]
       secret_name = "kronos-monitoring-grafana-tls"
     }
 
     rule {
-      host = "${var.subdomains[1]}.${var.domain}"
+      host = "${var.subdomains[2]}.${var.domain}"
       http {
         path {
           path      = "/"
@@ -400,12 +400,12 @@ resource "kubernetes_ingress_v1" "prometheus" {
   spec {
     ingress_class_name = "nginx"
     tls {
-      hosts       = ["${var.subdomains[2]}.${var.domain}"]
+      hosts       = ["${var.subdomains[3]}.${var.domain}"]
       secret_name = "kronos-monitoring-prometheus-tls"
     }
 
     rule {
-      host = "${var.subdomains[2]}.${var.domain}"
+      host = "${var.subdomains[3]}.${var.domain}"
       http {
         path {
           path      = "/"
@@ -435,12 +435,12 @@ resource "kubernetes_ingress_v1" "alertmanager" {
   spec {
     ingress_class_name = "nginx"
     tls {
-      hosts       = ["${var.subdomains[3]}.${var.domain}"]
+      hosts       = ["${var.subdomains[4]}.${var.domain}"]
       secret_name = "kronos-monitoring-alertmanager-tls"
     }
 
     rule {
-      host = "${var.subdomains[3]}.${var.domain}"
+      host = "${var.subdomains[4]}.${var.domain}"
       http {
         path {
           path      = "/"
@@ -470,12 +470,12 @@ resource "kubernetes_ingress_v1" "tempo" {
   spec {
     ingress_class_name = "nginx"
     tls {
-      hosts       = ["${var.subdomains[4]}.${var.domain}"]
+      hosts       = ["${var.subdomains[5]}.${var.domain}"]
       secret_name = "kronos-monitoring-tempo-tls"
     }
 
     rule {
-      host = "${var.subdomains[4]}.${var.domain}"
+      host = "${var.subdomains[5]}.${var.domain}"
       http {
         path {
           path      = "/"

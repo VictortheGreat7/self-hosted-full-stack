@@ -66,7 +66,7 @@ resource "helm_release" "kube_prometheus_stack" {
     },
     {
       name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.resources.requests.storage"
-      value = "5Gi"
+      value = "3Gi"
     },
     {
       name  = "grafana.persistence.storageClassName"
@@ -74,7 +74,7 @@ resource "helm_release" "kube_prometheus_stack" {
     },
     {
       name  = "grafana.persistence.size"
-      value = "5Gi"
+      value = "3Gi"
     },
     {
       name  = "grafana.adminPassword"
@@ -124,7 +124,7 @@ resource "helm_release" "tempo" {
     },
     {
       name  = "persistence.size"
-      value = "5Gi"
+      value = "3Gi"
     }
   ]
 
