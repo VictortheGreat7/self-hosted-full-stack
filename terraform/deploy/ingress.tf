@@ -315,18 +315,20 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
       "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
       "nginx.ingress.kubernetes.io/cors-allow-origin"  = "https://${var.subdomains[0]}.${var.domain}"
       "nginx.ingress.kubernetes.io/enable-cors"        = "true"
+      "nginx.ingress.kubernetes. io/cors-allow-methods" = "GET, POST, PUT, DELETE, OPTIONS"
+      "nginx.ingress. kubernetes.io/cors-allow-headers" = "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
     }
   }
 
   spec {
     ingress_class_name = "nginx"
     tls {
-      hosts       = ["${var.subdomains[1]}.${var.domain}"]
-      secret_name = "kronos-backend-tls"
+      hosts       = ["${var.subdomains[0]}.${var.domain}"]
+      secret_name = "kronos-tls"
     }
 
     rule {
-      host = "${var.subdomains[1]}.${var.domain}"
+      host = "${var.subdomains[0]}.${var.domain}"
       http {
         # Route /api/* to backend
         path {
