@@ -259,6 +259,51 @@ resource "cloudflare_dns_record" "kronos" {
   depends_on = [module.nginx-controller]
 }
 
+# Ingress Configuration for routing frontend traffic
+resource "kubernetes_ingress_v1" "kronos_frontend" {
+  metadata {
+    name      = "kronos-frontend-ingress"
+    namespace = "kronos"
+    annotations = {
+      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+    }
+  }
+
+  spec {
+    ingress_class_name = "nginx"
+    tls {
+      hosts       = ["${var.subdomains[0]}.${var.domain}"]
+      secret_name = "kronos-tls"
+    }
+
+    rule {
+      host = "${var.subdomains[0]}.${var.domain}"
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service_v1.kronos_frontend.metadata[0].name
+              port {
+                number = kubernetes_service_v1.kronos_frontend.spec[0].port[0].port
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    kubernetes_service_v1.kronos_frontend,
+    null_resource.wait_for_ingress_webhook,
+    kubernetes_job_v1.wait_for_ingress_webhook,
+    helm_release.cert_manager_prod_issuer
+  ]
+}
+
 # Ingress Configuration for backend traffic
 resource "kubernetes_ingress_v1" "kronos_backend" {
   metadata {
@@ -307,51 +352,6 @@ resource "kubernetes_ingress_v1" "kronos_backend" {
   ]
 }
 
-# Ingress Configuration for routing frontend traffic
-resource "kubernetes_ingress_v1" "kronos_frontend" {
-  metadata {
-    name      = "kronos-frontend-ingress"
-    namespace = "kronos"
-    annotations = {
-      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
-      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
-    }
-  }
-
-  spec {
-    ingress_class_name = "nginx"
-    tls {
-      hosts       = ["${var.subdomains[0]}.${var.domain}"]
-      secret_name = "kronos-tls"
-    }
-
-    rule {
-      host = "${var.subdomains[0]}.${var.domain}"
-      http {
-        path {
-          path      = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service_v1.kronos_frontend.metadata[0].name
-              port {
-                number = kubernetes_service_v1.kronos_frontend.spec[0].port[0].port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  depends_on = [
-    kubernetes_service_v1.kronos_frontend,
-    null_resource.wait_for_ingress_webhook,
-    kubernetes_job_v1.wait_for_ingress_webhook,
-    helm_release.cert_manager_prod_issuer
-  ]
-}
-
 # Ingress Configuration for Monitoring Stack
 resource "kubernetes_ingress_v1" "grafana" {
   metadata {
@@ -373,7 +373,7 @@ resource "kubernetes_ingress_v1" "grafana" {
       host = "${var.subdomains[2]}.${var.domain}"
       http {
         path {
-          path = "/grafana"
+          path = "/"
           path_type = "Prefix"
           backend {
             service {
@@ -408,7 +408,7 @@ resource "kubernetes_ingress_v1" "prometheus" {
       host = "${var.subdomains[3]}.${var.domain}"
       http {
         path {
-          path = "/prometheus"
+          path = "/"
           path_type = "Prefix"
           backend {
             service {
@@ -443,7 +443,7 @@ resource "kubernetes_ingress_v1" "alertmanager" {
       host = "${var.subdomains[4]}.${var.domain}"
       http {
         path {
-          path = "/alertmanager"
+          path = "/"
           path_type = "Prefix"
           backend {
             service {
@@ -478,7 +478,7 @@ resource "kubernetes_ingress_v1" "tempo" {
       host = "${var.subdomains[5]}.${var.domain}"
       http {
         path {
-          path = "/tempo"
+          path = "/"
           path_type = "Prefix"
           backend {
             service {
