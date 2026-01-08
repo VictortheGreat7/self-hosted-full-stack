@@ -42,10 +42,6 @@ variable "subdomains" {
   default = [
     "kronos",
     "backend",
-    "grafana",
-    "prometheus",
-    "alertmanager",
-    "tempo"
   ]
 }
 
